@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import { db } from "./db";
 import type { Role } from "./enums";
 
-const COOKIE = "tg_session";
+const COOKIE = "nix_session";
 const MAX_AGE = 60 * 60 * 24 * 30; // 30 dias (seção 5.1 da spec)
 
 function secret(): Uint8Array {

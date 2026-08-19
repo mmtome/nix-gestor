@@ -133,7 +133,7 @@ input[type="time"] {
 }
 
 /* Animações --------------------------------------------------------------- */
-@keyframes tg-slide-in {
+@keyframes nix-slide-in {
   from {
     transform: translateX(24px);
     opacity: 0;
@@ -144,10 +144,10 @@ input[type="time"] {
   }
 }
 .animate-drawer {
-  animation: tg-slide-in 0.16s ease-out;
+  animation: nix-slide-in 0.16s ease-out;
 }
 
-@keyframes tg-fade {
+@keyframes nix-fade {
   from {
     opacity: 0;
   }
@@ -156,5 +156,5 @@ input[type="time"] {
   }
 }
 .animate-fade {
-  animation: tg-fade 0.12s ease-out;
+  animation: nix-fade 0.12s ease-out;
 }

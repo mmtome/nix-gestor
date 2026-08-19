@@ -8,7 +8,7 @@ const PUBLIC_PATHS = ["/login"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const hasSession = request.cookies.has("tg_session");
+  const hasSession = request.cookies.has("nix_session");
 
   if (PUBLIC_PATHS.includes(pathname)) {
     if (hasSession) return NextResponse.redirect(new URL("/home", request.url));
@@ -25,5 +25,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|brand|favicon.ico).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|brand|favicon.ico|icon.png|apple-icon.png).*)"],
 };
