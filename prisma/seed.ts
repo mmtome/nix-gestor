@@ -13,9 +13,27 @@
 
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { initialOrders } from "../src/lib/ordering";
+import { initialOrders, between } from "../src/lib/ordering";
+import { POSTS, STORIES, BACKLOG } from "./conteudo-nix-setembro";
 
 const db = new PrismaClient();
+
+/* -------------------------------------------------------------------------- */
+/* helpers                                                                     */
+/* -------------------------------------------------------------------------- */
+
+/** Data local de 2026 no formato (dia, mês, hora, minuto). */
+const d = (day: number, month: number, hour = 18, minute = 0) =>
+  new Date(2026, month - 1, day, hour, minute, 0, 0);
+
+/** Gera chaves de rank fracionado em sequência (ver src/lib/ordering.ts). */
+class Order {
+  private last: string | null = null;
+  next() {
+    this.last = between(this.last, null);
+    return this.last;
+  }
+}
 
 /* -------------------------------------------------------------------------- */
 /* estrutura de trabalho da agência                                            */
@@ -171,11 +189,223 @@ async function main() {
   });
   console.log("Template criado: Fluxo de Produção (6 etapas)");
 
+  /* ======================================================================== */
+  /* projeto de exemplo: Planejamento NIX — setembro/2026                     */
+  /* ======================================================================== */
+
+  const nix = await db.project.create({
+    data: {
+      name: "Planejamento NIX",
+      color: "#8013A8",
+      icon: "instagram",
+      status: "ON_TRACK",
+      startDate: d(1, 9, 0, 0),
+      endDate: d(30, 9, 23, 59),
+      description: `Planejamento editorial do Instagram **da própria agência** — ciclo de setembro/2026. @agencianix
+
+**Cadência: dia sim, dia não.** Feed nos dias ímpares (01, 03, 05… 29) e stories nos dias pares, para o "dia não" nunca ficar mudo.
+
+**07/09 fica sem feed de propósito.** É feriado nacional, o alcance despenca e a peça queima sem retorno. O dia é coberto por um story institucional curto.
+
+**A âncora é o tipo, não o dia da semana.** Com publicação em dias alternados o dia da semana varia, então a previsibilidade vem do rodízio:
+ALCANCE › AUTORIDADE › RELACIONAMENTO › VENDAS › repete.
+
+**Mix de formatos do ciclo:** 5 carrosséis, 5 estáticos e 4 reels. Carrossel carrega profundidade, reels carrega alcance e estático carrega frase — nenhum dos três sozinho sustenta um mês.
+
+**O que se vende aqui é o Diagnóstico de Marca**, não a gestão mensal. A gestão é consequência de um diagnóstico bem feito; vender o contrato direto encurta o funil no lugar errado.
+
+**Duas travas de marca, obrigatórias em toda legenda**
+1. Nunca prometer resultado em prazo fechado. Caso é caso, não é promessa.
+2. Palavras banidas: milagre, revolucionário, fórmula, segredo, "explodir suas vendas".
+
+**Régua de ouro:** se a peça não gera salvamento, compartilhamento ou conversa no direct, ela não fez nada — por mais curtida que tenha.`,
+      members: {
+        create: [
+          { userId: matheus.id, role: "OWNER", favorite: true },
+          { userId: socio.id, role: "EDITOR", favorite: true },
+          { userId: social.id, role: "EDITOR", favorite: true },
+        ],
+      },
+    },
+  });
+
+  /* ------------------------------- seções --------------------------------- */
+
+  const nixSecoes = [
+    "Semana 1 · 01–07/set",
+    "Semana 2 · 08–14/set",
+    "Semana 3 · 15–21/set",
+    "Semana 4 · 22–30/set",
+    "Banco de pautas",
+    "Publicado",
+  ];
+  const nixOrdens = initialOrders(nixSecoes.length);
+  const secoes = await Promise.all(
+    nixSecoes.map((name, i) =>
+      db.section.create({ data: { projectId: nix.id, name, order: nixOrdens[i] } }),
+    ),
+  );
+  const semana = (w: number) => secoes[w - 1].id;
+  const bancoDePautas = secoes[4].id;
+
+  /* -------------------------------- tags ---------------------------------- */
+
+  const tagTipo: Record<string, string> = {};
+  for (const [name, color] of TIPOS) {
+    const t = await db.tag.create({ data: { name, color, projectId: nix.id } });
+    tagTipo[name] = t.id;
+  }
+  const tagFormato: Record<string, string> = {};
+  for (const [name, color] of FORMATOS) {
+    const t = await db.tag.create({ data: { name, color, projectId: nix.id } });
+    tagFormato[name] = t.id;
+  }
+
+  /* --------------------------- fluxo de produção -------------------------- */
+
+  const etapas = [
+    { title: "DEMANDAR", offsetDays: -6, assignee: matheus.id },
+    { title: "TRÁFEGO INTERNO", offsetDays: -5, assignee: socio.id },
+    { title: "EDIÇÃO", offsetDays: -4, assignee: social.id },
+    { title: "LEGENDA", offsetDays: -3, assignee: matheus.id },
+    { title: "APROVAÇÃO", offsetDays: -1, assignee: matheus.id },
+    { title: "PUBLICAÇÃO", offsetDays: 0, assignee: social.id },
+  ];
+
+  await db.subtaskTemplate.create({
+    data: {
+      projectId: nix.id,
+      name: "Fluxo de Produção",
+      items: etapas.map((e) => ({
+        title: e.title,
+        offsetDays: e.offsetDays,
+        defaultAssigneeEmail:
+          e.assignee === matheus.id
+            ? matheus.email
+            : e.assignee === socio.id
+              ? socio.email
+              : social.email,
+      })),
+    },
+  });
+
+  /* -------------------------------- feed ---------------------------------- */
+
+  const donos = { estrategia: matheus, social };
+  const ordemPorSemana = new Map<number, Order>();
+  let peças = 0;
+  let subtarefas = 0;
+
+  for (const post of POSTS) {
+    const ord = ordemPorSemana.get(post.week) ?? new Order();
+    ordemPorSemana.set(post.week, ord);
+
+    const publicacao = d(post.day, 9, 18, 0);
+
+    const task = await db.task.create({
+      data: {
+        title: post.title,
+        description: post.description,
+        creatorId: matheus.id,
+        assigneeId: donos[post.owner].id,
+        dueAt: publicacao,
+        dueHasTime: true,
+        estimatedMinutes: post.estimatedMinutes,
+        projects: {
+          create: { projectId: nix.id, sectionId: semana(post.week), order: ord.next() },
+        },
+        tags: {
+          create: [{ tagId: tagTipo[post.kind] }, { tagId: tagFormato[post.format] }],
+        },
+        collaborators: { create: [{ userId: socio.id }] },
+      },
+    });
+    peças++;
+    await db.activityLog.create({
+      data: { taskId: task.id, actorId: matheus.id, type: "created" },
+    });
+
+    // Prazos das etapas contados para trás, a partir da data de publicação.
+    const subOrd = new Order();
+    for (const etapa of etapas) {
+      const prazo = new Date(publicacao);
+      prazo.setDate(prazo.getDate() + etapa.offsetDays);
+      await db.task.create({
+        data: {
+          title: etapa.title,
+          creatorId: matheus.id,
+          parentTaskId: task.id,
+          subtaskOrder: subOrd.next(),
+          dueAt: prazo,
+          dueHasTime: true,
+          assigneeId: etapa.assignee,
+        },
+      });
+      subtarefas++;
+    }
+    await db.activityLog.create({
+      data: { taskId: task.id, actorId: matheus.id, type: "template_applied" },
+    });
+  }
+
+  /* ------------------------------- stories -------------------------------- */
+
+  for (const s of STORIES) {
+    const ord = ordemPorSemana.get(s.week) ?? new Order();
+    ordemPorSemana.set(s.week, ord);
+
+    const task = await db.task.create({
+      data: {
+        title: s.title,
+        description: s.description,
+        creatorId: matheus.id,
+        assigneeId: social.id,
+        dueAt: d(s.day, 9, s.hour, 0),
+        dueHasTime: true,
+        estimatedMinutes: 30,
+        projects: {
+          create: { projectId: nix.id, sectionId: semana(s.week), order: ord.next() },
+        },
+        tags: {
+          create: [{ tagId: tagTipo[s.kind] }, { tagId: tagFormato.STORIES }],
+        },
+      },
+    });
+    peças++;
+    await db.activityLog.create({
+      data: { taskId: task.id, actorId: matheus.id, type: "created" },
+    });
+  }
+
+  /* ---------------------------- banco de pautas --------------------------- */
+
+  const ordBanco = new Order();
+  for (const item of BACKLOG) {
+    await db.task.create({
+      data: {
+        title: item.title,
+        creatorId: matheus.id,
+        description:
+          item.description ??
+          "Pauta do banco do ciclo de setembro. Ao puxar para uma semana, definir " +
+            "formato, prazo com hora e aplicar o template Fluxo de Produção.",
+        projects: {
+          create: { projectId: nix.id, sectionId: bancoDePautas, order: ordBanco.next() },
+        },
+        tags: { create: [{ tagId: tagTipo[item.kind] }] },
+      },
+    });
+    peças++;
+  }
+
+  console.log(
+    `Planejamento NIX: ${peças} tarefas (${POSTS.length} feed, ${STORIES.length} stories, ` +
+      `${BACKLOG.length} pautas) + ${subtarefas} subtarefas de fluxo`,
+  );
+
   console.log("");
   console.log("  Acesso:  matheusmigueltome@gmail.com  ·  senha: nix");
   console.log("  Também:  socio2@agencianix.com.br / social@agencianix.com.br");
-  console.log("");
-  console.log("  Nenhuma tarefa foi criada — o app começa vazio, de propósito.");
   console.log("");
 }
 

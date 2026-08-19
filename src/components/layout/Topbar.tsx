@@ -100,7 +100,7 @@ export function Topbar({
       </form>
 
       <div className="ml-auto text-[10px] font-semibold uppercase tracking-[0.2em] text-faint">
-        Mapear · Resolver · Lucrar
+        Foco · Energia · Precisão
       </div>
 
       <QuickCreateTask

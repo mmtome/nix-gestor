@@ -91,7 +91,7 @@ export function QuickCreateTask({
         className="field"
         autoFocus
         value={title}
-        placeholder="Ex.: Raio-X de Processo #03 — carrossel"
+        placeholder="Ex.: Carrossel de autoridade — semana 3"
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit();

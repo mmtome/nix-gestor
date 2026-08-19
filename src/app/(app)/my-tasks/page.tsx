@@ -42,7 +42,7 @@ export default async function MyTasksPage({
         <div className="card p-8 text-center">
           <p className="text-[13px] text-muted">Nenhuma tarefa atribuída a você.</p>
           <p className="mt-1 text-[12px] text-faint">
-            Todo atrito é lucro escapando — mas hoje a sua fila está limpa.
+            Nada travado por aqui — sua fila está limpa.
           </p>
         </div>
       )}

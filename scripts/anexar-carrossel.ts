@@ -6,7 +6,7 @@
  * nunca em paralelo.
  *
  * Uso:  npm run carrossel:anexar -- "<pasta>" "<prefixo dos arquivos>" "<trecho do título>"
- * Ex.:  npm run carrossel:anexar -- "d:/TS/BRANDING/posts" "02 - 05-08 - Raio-X 01" "Raio-X de Processo #01"
+ * Ex.:  npm run carrossel:anexar -- "d:/TS/BRANDING/posts" "03 - carrossel-canais" "Como a gente decide"
  *
  * Idempotente: reanexar apaga os cards anteriores com o mesmo prefixo antes de
  * subir os novos, senão a segunda rodada duplicaria o carrossel.

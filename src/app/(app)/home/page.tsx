@@ -54,7 +54,7 @@ export default async function HomePage() {
             {greeting()}, {user.name.split(" ")[0]}.
           </h1>
           <p className="mt-1 text-[13px] text-muted">
-            Todo atrito é lucro escapando. Veja o que está travado hoje.
+            O método mantém a órbita. Veja o que está travado hoje.
           </p>
         </div>
       </div>
