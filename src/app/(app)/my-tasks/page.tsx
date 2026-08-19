@@ -55,7 +55,7 @@ export default async function MyTasksPage({
             <section key={bucket}>
               <h2
                 className={`mb-2 text-[12px] font-semibold uppercase tracking-wider ${
-                  bucket === "overdue" ? "text-brand" : "text-faint"
+                  bucket === "overdue" ? "text-accent" : "text-faint"
                 }`}
               >
                 {DUE_BUCKET_LABEL[bucket]}{" "}

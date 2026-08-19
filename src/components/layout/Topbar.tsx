@@ -92,7 +92,7 @@ export function Topbar({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Buscar tarefas e projetos…"
-          className="w-full rounded-md border border-line bg-surface py-1.5 pl-9 pr-10 text-[13px] text-text outline-none transition placeholder:text-faint focus:border-brand"
+          className="w-full rounded-md border border-line bg-surface py-1.5 pl-9 pr-10 text-[13px] text-text outline-none transition placeholder:text-faint focus:border-accent"
         />
         <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-line px-1.5 py-0.5 text-[10px] text-faint">
           /

@@ -59,7 +59,7 @@ function inline(s: string): string {
       /(https?:\/\/[^\s<]+)/g,
       '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>',
     )
-    .replace(/@([\wÀ-ÿ.]+)/g, '<span class="text-brand font-medium">@$1</span>');
+    .replace(/@([\wÀ-ÿ.]+)/g, '<span class="text-accent font-medium">@$1</span>');
 }
 
 /** Prévia em uma linha (usada em cards e resultados de busca). */

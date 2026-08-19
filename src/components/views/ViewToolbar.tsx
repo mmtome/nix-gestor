@@ -102,7 +102,7 @@ export function ViewToolbar({
             >
               <span
                 className={`flex h-3.5 w-3.5 items-center justify-center rounded border ${
-                  filters.incomplete ? "border-brand bg-brand" : "border-faint"
+                  filters.incomplete ? "border-accent bg-brand" : "border-faint"
                 }`}
               >
                 {filters.incomplete && <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />}
@@ -177,7 +177,7 @@ export function ViewToolbar({
 
             {activeFilters > 0 && (
               <button
-                className="mt-1 w-full border-t border-line px-3 py-2 text-left text-[12px] text-brand transition hover:bg-surface"
+                className="mt-1 w-full border-t border-line px-3 py-2 text-left text-[12px] text-accent transition hover:bg-surface"
                 onClick={() =>
                   save({ filters: { incomplete: true, assigneeIds: [], tagIds: [] } })
                 }
@@ -257,7 +257,7 @@ export function ViewToolbar({
           value={query}
           onChange={(e) => onQuery(e.target.value)}
           placeholder="Filtrar nesta visão…"
-          className="w-52 rounded-md border border-line bg-surface py-1 pl-8 pr-2 text-[12px] outline-none transition placeholder:text-faint focus:border-brand"
+          className="w-52 rounded-md border border-line bg-surface py-1 pl-8 pr-2 text-[12px] outline-none transition placeholder:text-faint focus:border-accent"
         />
       </div>
 

@@ -104,7 +104,7 @@ export function SimpleTaskList({ tasks }: { tasks: SimpleTask[] }) {
 
             <span
               className={`w-28 shrink-0 text-right text-[11.5px] ${
-                isOverdue(due, completed) ? "text-brand" : "text-muted"
+                isOverdue(due, completed) ? "text-accent" : "text-muted"
               }`}
             >
               {due ? formatDue(due, t.dueHasTime) : ""}

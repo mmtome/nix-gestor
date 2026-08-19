@@ -118,7 +118,7 @@ export function DueDatePicker({
         <button
           onClick={toggle}
           className={`w-full rounded-md px-1.5 py-1 text-left text-[13px] transition hover:bg-surface ${
-            overdue ? "text-brand" : dueAt ? "text-text" : "text-faint"
+            overdue ? "text-accent" : dueAt ? "text-text" : "text-faint"
           }`}
         >
           {dueAt ? formatDue(dueAt, hasTime) : "Sem prazo"}
@@ -155,7 +155,7 @@ export function DueDatePicker({
             />
             <div className="mt-3 flex justify-between">
               <button
-                className="text-[12px] text-faint transition hover:text-brand"
+                className="text-[12px] text-faint transition hover:text-accent"
                 onClick={() => {
                   onChange(null, false);
                   close();
@@ -236,7 +236,7 @@ export function TagPicker({
         trigger={({ toggle }) => (
           <button
             onClick={toggle}
-            className="rounded-full border border-dashed border-faint px-2 py-0.5 text-[10px] text-faint transition hover:border-brand hover:text-brand"
+            className="rounded-full border border-dashed border-faint px-2 py-0.5 text-[10px] text-faint transition hover:border-accent hover:text-accent"
           >
             + tag
           </button>
@@ -275,7 +275,7 @@ export function TagPicker({
               })}
               {canCreate && onCreate && (
                 <button
-                  className="flex w-full items-center gap-2 border-t border-line px-3 py-2 text-left text-[13px] text-brand transition hover:bg-surface"
+                  className="flex w-full items-center gap-2 border-t border-line px-3 py-2 text-left text-[13px] text-accent transition hover:bg-surface"
                   onClick={async () => {
                     await onCreate(
                       q.trim(),

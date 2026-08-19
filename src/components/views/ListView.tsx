@@ -459,7 +459,7 @@ function TaskRow({
           </span>
         </div>
 
-        <span className={`truncate text-[12px] ${overdue ? "text-brand" : "text-muted"}`}>
+        <span className={`truncate text-[12px] ${overdue ? "text-accent" : "text-muted"}`}>
           {due ? formatDue(due, task.dueHasTime) : ""}
         </span>
 
@@ -515,7 +515,7 @@ function TaskRow({
               </div>
               <span
                 className={`truncate text-[11px] ${
-                  isOverdue(sDue, sDone) ? "text-brand" : "text-faint"
+                  isOverdue(sDue, sDone) ? "text-accent" : "text-faint"
                 }`}
               >
                 {sDue ? formatDue(sDue, s.dueHasTime) : ""}
@@ -569,7 +569,7 @@ function InlineAdd({
         autoFocus
         value={title}
         placeholder="Título e Enter — o cursor fica pronto para a próxima"
-        className="w-full rounded-md border border-brand bg-surface px-2.5 py-1.5 text-[13px] outline-none placeholder:text-faint"
+        className="w-full rounded-md border border-accent bg-surface px-2.5 py-1.5 text-[13px] outline-none placeholder:text-faint"
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Enter" && title.trim()) {

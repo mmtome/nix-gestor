@@ -153,7 +153,7 @@ export function ProjectHeader({
               href={href}
               className={`-mb-px border-b-2 px-3 pb-2.5 pt-1 text-[13px] transition ${
                 active
-                  ? "border-brand font-medium text-text"
+                  ? "border-accent font-medium text-text"
                   : "border-transparent text-muted hover:text-dim"
               }`}
             >
@@ -204,7 +204,7 @@ function MembersModal({
               {m.role}
             </span>
             <button
-              className="text-[11px] text-faint transition hover:text-brand"
+              className="text-[11px] text-faint transition hover:text-accent"
               onClick={() =>
                 start(async () => {
                   await removeMember(projectId, m.id);
@@ -224,7 +224,7 @@ function MembersModal({
           <input
             className="field"
             value={email}
-            placeholder="pessoa@triangulosolutions.com.br"
+            placeholder="pessoa@agencianix.com.br"
             onChange={(e) => setEmail(e.target.value)}
           />
           <select className="field w-32" value={role} onChange={(e) => setRole(e.target.value)}>
@@ -251,7 +251,7 @@ function MembersModal({
             Adicionar
           </button>
         </div>
-        {error && <p className="mt-2 text-xs text-brand">{error}</p>}
+        {error && <p className="mt-2 text-xs text-accent">{error}</p>}
       </div>
     </Modal>
   );

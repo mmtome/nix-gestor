@@ -14,7 +14,7 @@ const SIZES = {
 
 export function Avatar({
   name,
-  color = "#CE2B34",
+  color = "#8013A8",
   size = "sm",
   title,
 }: {

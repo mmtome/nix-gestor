@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 
-// Poppins é a família tipográfica oficial da marca (Manual da Marca, seção 09).
+// Poppins é a família tipográfica única da marca (Manual da Marca NIX, seção 09).
 const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
@@ -10,11 +10,13 @@ const poppins = Poppins({
   display: "swap",
 });
 
+// O ícone vem de src/app/icon.png e src/app/apple-icon.png pela convenção do
+// App Router; aqui só declaramos o SVG, que os navegadores modernos preferem.
 export const metadata: Metadata = {
-  title: "Triângulo Gestor",
+  title: "NIX Gestor",
   description:
-    "Gestão da produção de conteúdo da Triângulo Solutions. Mapear. Resolver. Lucrar.",
-  icons: { icon: "/brand/simbolo-vermelho.svg" },
+    "Gestão da produção de conteúdo da Agência NIX. Foco. Energia. Precisão.",
+  icons: { icon: [{ url: "/brand/simbolo.svg", type: "image/svg+xml" }] },
 };
 
 export default function RootLayout({

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 873.4 806.4" role="img" aria-label="Agência NIX">
+  <defs>
+    <linearGradient id="r" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8013A8"/><stop offset="1" stop-color="#6E327C"/></linearGradient>
+    <linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFAB00"/><stop offset="1" stop-color="#FB7601"/></linearGradient>
+  </defs>
+  <circle cx="400" cy="406.4" r="322.46" fill="none" stroke="url(#r)" stroke-width="155.08"/>
+  <circle cx="400" cy="406.4" r="82.92" fill="url(#r)"/>
+  <circle cx="728.44" cy="144.92" r="144.96" fill="url(#a)"/>
+</svg>

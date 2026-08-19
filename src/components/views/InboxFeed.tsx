@@ -27,7 +27,7 @@ export function InboxFeed({ items, onlyUnread }: { items: Item[]; onlyUnread: bo
         <Link
           href="/inbox"
           className={`rounded-md border px-3 py-1 text-[12px] transition ${
-            onlyUnread ? "border-brand bg-brand-soft text-text" : "border-line text-muted"
+            onlyUnread ? "border-accent bg-brand-soft text-text" : "border-line text-muted"
           }`}
         >
           Não lidas
@@ -35,7 +35,7 @@ export function InboxFeed({ items, onlyUnread }: { items: Item[]; onlyUnread: bo
         <Link
           href="/inbox?tab=all"
           className={`rounded-md border px-3 py-1 text-[12px] transition ${
-            !onlyUnread ? "border-brand bg-brand-soft text-text" : "border-line text-muted"
+            !onlyUnread ? "border-accent bg-brand-soft text-text" : "border-line text-muted"
           }`}
         >
           Todas

@@ -11,14 +11,14 @@ import {
   YAxis,
 } from "recharts";
 
-const AXIS = { fontSize: 11, fill: "#9A9AA2" };
+const AXIS = { fontSize: 11, fill: "#A093AB" };
 
 const tooltipStyle = {
-  backgroundColor: "#1C1C20",
-  border: "1px solid #2E2E34",
+  backgroundColor: "#251C2E",
+  border: "1px solid #382C44",
   borderRadius: 8,
   fontSize: 12,
-  color: "#F5F4F3",
+  color: "#F3EEF6",
 };
 
 export function DashboardCharts({
@@ -39,7 +39,7 @@ export function DashboardCharts({
         ) : (
           <ResponsiveContainer width="100%" height={Math.max(180, byAssignee.length * 42)}>
             <BarChart data={byAssignee} layout="vertical" margin={{ left: 8, right: 16 }}>
-              <CartesianGrid stroke="#2E2E34" horizontal={false} />
+              <CartesianGrid stroke="#382C44" horizontal={false} />
               <XAxis type="number" tick={AXIS} axisLine={false} tickLine={false} allowDecimals={false} />
               <YAxis
                 type="category"
@@ -73,7 +73,7 @@ export function DashboardCharts({
         ) : (
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={byMonth} margin={{ left: -18, right: 8 }}>
-              <CartesianGrid stroke="#2E2E34" vertical={false} />
+              <CartesianGrid stroke="#382C44" vertical={false} />
               <XAxis dataKey="month" tick={AXIS} axisLine={false} tickLine={false} />
               <YAxis tick={AXIS} axisLine={false} tickLine={false} allowDecimals={false} />
               <Tooltip
@@ -81,7 +81,7 @@ export function DashboardCharts({
                 cursor={{ fill: "#ffffff08" }}
                 formatter={(v) => [String(v), "Tarefas"]}
               />
-              <Bar dataKey="count" fill="#CE2B34" radius={[4, 4, 0, 0]} barSize={28} />
+              <Bar dataKey="count" fill="#C77BE8" radius={[4, 4, 0, 0]} barSize={28} />
             </BarChart>
           </ResponsiveContainer>
         )}

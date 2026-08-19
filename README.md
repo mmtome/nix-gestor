@@ -1,11 +1,12 @@
-# Triângulo Gestor
+# NIX Gestor
 
-Sistema interno de gestão da produção de conteúdo da **Triângulo Solutions**.
-Implementa a especificação de [`../especificacao-gestor-interno.md`](../especificacao-gestor-interno.md)
-e nasce já carregado com o **Planejamento de Conteúdo do Instagram — ciclo 1 (agosto/2026)**.
+Sistema interno de gestão da produção de conteúdo da **Agência NIX**.
+Cada cliente é um projeto, cada peça é uma tarefa com o fluxo de produção em
+subtarefas, e a equipe enxerga por lista, quadro ou calendário.
 
-> Cada cliente é um projeto. Cada peça de conteúdo é uma tarefa com o fluxo de
-> produção em subtarefas. A equipe enxerga por lista, quadro ou calendário.
+> Clonado do `triangulo-gestor` e reestilizado na identidade visual da NIX
+> (Manual da Marca da Agência NIX v1.0). A engenharia é a mesma; a marca, a
+> paleta e o conteúdo inicial são outros.
 
 ---
 
@@ -22,13 +23,13 @@ npm run db:seed         # opcional: recria os dados de exemplo
 npm run dev             # http://localhost:3000
 ```
 
-**Acessos criados pelo seed** (senha `triangulo` para todos):
+**Acessos criados pelo seed** (senha `nix` para todos — troque em produção):
 
 | E-mail | Papel | Observação |
 |---|---|---|
 | `matheusmigueltome@gmail.com` | ADMIN | conta principal |
-| `socio2@triangulosolutions.com.br` | MEMBER | placeholder — renomeie em *Membros* |
-| `social@triangulosolutions.com.br` | MEMBER | placeholder — renomeie em *Membros* |
+| `socio2@agencianix.com.br` | MEMBER | placeholder — renomeie em *Membros* |
+| `social@agencianix.com.br` | MEMBER | placeholder — renomeie em *Membros* |
 
 `npm run db:seed` recria os dados de exemplo do zero (apaga o que existir).
 `npm run db:studio` abre o Prisma Studio para inspecionar o banco.
@@ -37,52 +38,49 @@ npm run dev             # http://localhost:3000
 
 ## O que já vem carregado
 
-**Projeto "Instagram · Planejamento de Conteúdo"** — 60 tarefas + 72 subtarefas:
+**Nada de conteúdo — de propósito.** O seed cria a equipe e um único projeto,
+`Modelo · Planejamento de Conteúdo`, sem nenhuma tarefa dentro. Ele existe para
+ser **duplicado a cada cliente novo**, já com a estrutura montada:
 
-- **Seções = as 4 semanas do ciclo** (03–07, 10–14, 17–21, 24–28 de agosto) mais
-  *Banco de pautas* e *Publicado*.
-- **Tags = os 4 tipos de conteúdo** (ALCANCE, AUTORIDADE, RELACIONAMENTO,
-  VENDAS) + formato (REELS, CARROSSEL, STORIES) + os rituais nomeados
-  (RAIO-X DE PROCESSO, SEM HYPE, DO PROBLEMA AO LUCRO, PERGUNTA DE ENGENHARIA).
-- **12 posts de feed**, cada um com gancho, roteiro, CTA, pilar e métrica-rainha
-  na descrição — e o fluxo `DEMANDAR → TRÁFEGO INTERNO → EDIÇÃO → LEGENDA →
-  APROVAÇÃO → PUBLICAÇÃO` já aplicado como subtarefas, com prazos calculados
-  retroativamente a partir da data de publicação.
-- **8 tarefas de stories** (Pergunta de Engenharia às terças, bastidor às quintas).
-- **40 pautas** no banco, cada uma tagueada pelo tipo.
-- **Uma dependência real:** o caso "Do Problema ao Lucro #01" (28/08) está
-  bloqueado pela oferta do Mapa (14/08).
-- **Os dois bloqueios do plano** estão escritos na descrição das tarefas
-  afetadas: a Creation Story ainda é modelo, e o caso real precisa de número
-  fechado.
-
-**Projeto "LinkedIn · Autoridade dos sócios"** — a regra de reaproveitamento do
-plano (carrossel de quarta vira post de texto na quinta), com as 4 adaptações
-do ciclo.
-
-O **template "Fluxo de Produção"** fica disponível no drawer de qualquer tarefa
-nova pelo botão *Aplicar Fluxo de Produção*.
+- **6 seções**: `Semana 1` a `Semana 4`, `Banco de pautas` e `Publicado`.
+- **8 tags**: os 4 tipos de conteúdo (ALCANCE, AUTORIDADE, RELACIONAMENTO,
+  VENDAS) e os 4 formatos (REELS, CARROSSEL, ESTÁTICO, STORIES).
+- **Template `Fluxo de Produção`**: 6 etapas — DEMANDAR, TRÁFEGO INTERNO,
+  EDIÇÃO, LEGENDA, APROVAÇÃO e PUBLICAÇÃO — com prazos relativos à data de
+  publicação.
 
 ---
 
 ## Identidade visual
 
-Tudo travado no **Manual da Marca v1.0** (`../../assets/Manual da Marca.pdf`):
+Tudo travado no **Manual da Marca da Agência NIX v1.0**:
 
 | Token | Valor | Origem |
 |---|---|---|
-| `brand` | `#CE2B34` | Vermelho Triângulo |
-| `ink` | `#0E0E10` | Preto |
-| `graphite` | `#17171A` | Grafite |
-| `muted` | `#9A9AA2` | Cinza |
+| `brand` | `#8013A8` | Violeta NIX — **preenchimentos** |
+| `accent` | `#C77BE8` | Violeta claro — **texto, ícones e bordas** |
+| `brand-hover` | `#9A1DC8` | hover do botão primário |
+| `ink` | `#15101A` | Grafite |
+| `graphite` | `#1E1725` | superfície elevada |
+| `warn` | `#FFAB00` | Âmbar NIX |
+| `muted` | `#A093AB` | neutro com viés violeta |
 | fonte | **Poppins** 300–700 | seção 09 do manual |
 
-O símbolo isométrico oficial está inline em
-[`src/components/brand/Logo.tsx`](src/components/brand/Logo.tsx) (herda a cor por
-`currentColor`) e também em `public/brand/` para favicon.
+**Por que dois tokens de marca.** A interface é escura, e sobre fundo escuro o
+Violeta NIX puro dá **2,30:1** — reprova em texto pela WCAG. Então a marca se
+divide: `bg-brand` para preencher (branco sobre ele dá 8,15:1, AAA) e
+`text-accent` / `border-accent` para traçar (6,63:1, AA). Escrever
+`text-brand` produz texto ilegível; o token nem existe para texto.
 
-> O documento de branding sugeria uma paleta azul-petróleo + âmbar. O Manual da
-> Marca v1.0 é posterior e define vermelho + preto — é ele que vale aqui.
+O símbolo está inline em
+[`src/components/brand/Logo.tsx`](src/components/brand/Logo.tsx) em duas versões:
+`Symbol` (policromático, o preferencial) e `SymbolMono` (herda `currentColor`,
+só para marca d'água e reprodução de uma cor). As assinaturas completas e os
+SVGs de favicon estão em `public/brand/`.
+
+> A geometria do símbolo é derivada de um único valor, o raio externo do anel:
+> espessura `0,3877 R`, ponto central `0,2073 R`, ponto âmbar `0,3624 R` a
+> `1,0496 R` do centro, a 38,5°. Não reposicione o ponto âmbar.
 
 ---
 

@@ -48,7 +48,7 @@ export default async function DashboardPage({
     const key = t.assignee?.id ?? "__none";
     const entry = byAssignee.get(key) ?? {
       name: t.assignee?.name ?? "Sem responsável",
-      color: t.assignee?.avatarColor ?? "#6B6B73",
+      color: t.assignee?.avatarColor ?? "#766A80",
       total: 0,
       done: 0,
     };
@@ -68,7 +68,7 @@ export default async function DashboardPage({
   const cards = [
     { label: "Total de tarefas", value: total, tone: "text-text" },
     { label: "Concluídas", value: done, tone: "text-ok" },
-    { label: "Atrasadas", value: overdue, tone: "text-brand" },
+    { label: "Atrasadas", value: overdue, tone: "text-accent" },
     { label: "Sem responsável", value: unassigned, tone: "text-warn" },
   ];
 
@@ -87,7 +87,7 @@ export default async function DashboardPage({
             href={`?period=${key}`}
             className={`rounded-md border px-3 py-1 text-[12px] transition ${
               period === key
-                ? "border-brand bg-brand-soft text-text"
+                ? "border-accent bg-brand-soft text-text"
                 : "border-line text-muted hover:text-text"
             }`}
           >

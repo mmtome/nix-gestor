@@ -58,7 +58,7 @@ export function NewProjectModal({ open, onClose }: { open: boolean; onClose: () 
         ))}
       </div>
 
-      {error && <p className="mt-3 text-xs text-brand">{error}</p>}
+      {error && <p className="mt-3 text-xs text-accent">{error}</p>}
 
       <div className="mt-6 flex justify-end gap-2">
         <button className="btn-ghost" onClick={onClose} disabled={pending}>

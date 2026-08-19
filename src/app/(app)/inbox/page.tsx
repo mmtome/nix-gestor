@@ -46,7 +46,7 @@ export default async function InboxPage({
     actor: actors.find((a) => a.id === n.actorId) ?? {
       id: "sistema",
       name: "Sistema",
-      avatarColor: "#6B6B73",
+      avatarColor: "#766A80",
     },
   }));
 

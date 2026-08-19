@@ -31,7 +31,7 @@ export function LoginForm({ next }: { next?: string }) {
         required
         autoFocus
         className="field"
-        placeholder="voce@triangulosolutions.com.br"
+        placeholder="voce@agencianix.com.br"
       />
 
       <label className="mb-1.5 mt-4 block text-xs font-medium text-dim" htmlFor="password">
@@ -48,7 +48,7 @@ export function LoginForm({ next }: { next?: string }) {
       />
 
       {state.error && (
-        <p className="mt-3 rounded-md border border-brand/40 bg-brand-soft px-3 py-2 text-xs text-brand">
+        <p className="mt-3 rounded-md border border-accent/40 bg-brand-soft px-3 py-2 text-xs text-accent">
           {state.error}
         </p>
       )}

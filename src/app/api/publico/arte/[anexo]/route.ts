@@ -53,7 +53,7 @@ export async function GET(
       : Buffer.from(new Uint8Array(await new Response(arquivo.body as ReadableStream).arrayBuffer()));
 
   const sharp = (await import("sharp")).default;
-  const jpeg = await sharp(bytes).flatten({ background: "#0E0E10" }).jpeg({ quality: 92 }).toBuffer();
+  const jpeg = await sharp(bytes).flatten({ background: "#15101A" }).jpeg({ quality: 92 }).toBuffer();
 
   return new NextResponse(new Uint8Array(jpeg), {
     headers: {

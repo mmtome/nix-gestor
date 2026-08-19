@@ -201,7 +201,7 @@ export function BoardView({
                 <input
                   autoFocus
                   placeholder="Nome da seção e Enter"
-                  className="w-full rounded-md border border-brand bg-surface px-3 py-2 text-[13px] outline-none"
+                  className="w-full rounded-md border border-accent bg-surface px-3 py-2 text-[13px] outline-none"
                   onKeyDown={(e) => {
                     const v = (e.target as HTMLInputElement).value.trim();
                     if (e.key === "Enter" && v) {
@@ -316,7 +316,7 @@ function Column({
                   Renomear seção
                 </button>
                 <button
-                  className="block w-full px-3 py-1.5 text-left text-[12px] text-brand transition hover:bg-surface"
+                  className="block w-full px-3 py-1.5 text-left text-[12px] text-accent transition hover:bg-surface"
                   onClick={() => {
                     close();
                     if (
@@ -338,7 +338,7 @@ function Column({
       <div
         ref={setNodeRef}
         className={`min-h-0 flex-1 overflow-y-auto rounded-lg border p-2 transition ${
-          isOver ? "border-brand bg-brand-soft/40" : "border-line bg-graphite/50"
+          isOver ? "border-accent bg-brand-soft/40" : "border-line bg-graphite/50"
         }`}
       >
         <SortableContext items={column.tasks.map((t) => t.id)} strategy={rectSortingStrategy}>
@@ -357,7 +357,7 @@ function Column({
           <input
             autoFocus
             placeholder="Título e Enter"
-            className="mt-1 w-full rounded-md border border-brand bg-surface px-2.5 py-2 text-[12.5px] outline-none"
+            className="mt-1 w-full rounded-md border border-accent bg-surface px-2.5 py-2 text-[12.5px] outline-none"
             onKeyDown={(e) => {
               const v = (e.target as HTMLInputElement).value.trim();
               if (e.key === "Enter" && v) {
@@ -447,7 +447,7 @@ function Card({
 
         <div className="mt-2 flex items-center gap-2 text-[10px] text-faint">
           {due && (
-            <span className={isOverdue(due, completed) ? "text-brand" : ""}>
+            <span className={isOverdue(due, completed) ? "text-accent" : ""}>
               {formatDue(due, task.dueHasTime)}
             </span>
           )}

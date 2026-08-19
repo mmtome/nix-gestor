@@ -16,10 +16,12 @@ export const PROJECT_STATUS_LABEL: Record<ProjectStatus, string> = {
   OFF_TRACK: "Em atraso",
 };
 
+// Cores de status são semânticas, não de marca: atraso continua vermelho.
+// O "em risco" usa o âmbar da NIX, que já é a cor de alerta do manual.
 export const PROJECT_STATUS_COLOR: Record<ProjectStatus, string> = {
-  ON_TRACK: "#5DA283",
-  AT_RISK: "#F1BD6C",
-  OFF_TRACK: "#CE2B34",
+  ON_TRACK: "#6FDCA5",
+  AT_RISK: "#FFAB00",
+  OFF_TRACK: "#FF6B6B",
 };
 
 export const NOTIFICATION_TYPES = [
@@ -35,22 +37,22 @@ export const VIEW_TYPES = ["list", "board", "calendar"] as const;
 export type ViewType = (typeof VIEW_TYPES)[number];
 
 // Paleta de 16 cores para projetos e tags (seção 8 da spec), reancorada na
-// identidade do Manual da Marca: o vermelho Triângulo abre a lista.
+// identidade do Manual da Marca NIX: as quatro cores da marca abrem a lista.
 export const PALETTE = [
-  "#CE2B34", // vermelho Triângulo
+  "#8013A8", // Violeta NIX
+  "#B863E0",
+  "#FFAB00", // Âmbar NIX
+  "#FB7601", // Laranja NIX
   "#E8574F",
+  "#F06A6A",
   "#EC8D71",
-  "#F1BD6C",
-  "#D9C36B",
   "#A8C466",
-  "#5DA283",
+  "#6FDCA5",
   "#4FB3A6",
   "#4573D2",
   "#5B8DEF",
   "#8D84E8",
-  "#B57BE0",
-  "#F06A6A",
   "#F9AAEF",
-  "#9A9AA2",
-  "#6B6B73",
+  "#A093AB",
+  "#766A80",
 ] as const;

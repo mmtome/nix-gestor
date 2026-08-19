@@ -50,7 +50,7 @@ export function Sidebar({
                   : "text-dim hover:bg-surface hover:text-text"
               }`}
             >
-              <Icon className={`h-[15px] w-[15px] ${active ? "text-brand" : "text-muted"}`} />
+              <Icon className={`h-[15px] w-[15px] ${active ? "text-accent" : "text-muted"}`} />
               <span className="flex-1 truncate">{label}</span>
               {href === "/inbox" && unread > 0 && (
                 <span className="rounded-full bg-brand px-1.5 py-0.5 text-[10px] font-semibold text-white">
@@ -110,7 +110,7 @@ export function Sidebar({
           <form action={logoutAction}>
             <button
               type="submit"
-              className="rounded p-1.5 text-muted transition hover:bg-surface hover:text-brand"
+              className="rounded p-1.5 text-muted transition hover:bg-surface hover:text-accent"
               title="Sair"
             >
               <LogOut className="h-3.5 w-3.5" />

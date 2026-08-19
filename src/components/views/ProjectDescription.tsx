@@ -34,7 +34,7 @@ export function ProjectDescription({
           }
         }}
         placeholder="Para que serve este projeto? Aceita **negrito**, _itálico_, listas com - e links."
-        className="w-full resize-y rounded-md border border-line bg-surface px-4 py-3 text-[13px] leading-relaxed outline-none transition focus:border-brand placeholder:text-faint"
+        className="w-full resize-y rounded-md border border-line bg-surface px-4 py-3 text-[13px] leading-relaxed outline-none transition focus:border-accent placeholder:text-faint"
       />
     );
   }

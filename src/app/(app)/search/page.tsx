@@ -52,7 +52,7 @@ export default async function SearchPage({
   return (
     <div className="mx-auto max-w-4xl px-6 py-6">
       <h1 className="text-[20px] font-semibold tracking-tight">
-        Resultados para <span className="text-brand">{term}</span>
+        Resultados para <span className="text-accent">{term}</span>
       </h1>
 
       {projects.length > 0 && (

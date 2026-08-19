@@ -195,7 +195,7 @@ export function CalendarView({
         <button
           onClick={() => setShowUndated((v) => !v)}
           className={`btn-ghost ml-auto py-1 text-[12px] ${
-            showUndated ? "border-brand text-brand" : ""
+            showUndated ? "border-accent text-accent" : ""
           }`}
         >
           <CalendarOff className="h-3.5 w-3.5" />
@@ -322,7 +322,7 @@ function DayCell({
         </span>
         <button
           onClick={() => setAdding(true)}
-          className="rounded p-0.5 text-transparent transition group-hover:text-faint hover:!text-brand"
+          className="rounded p-0.5 text-transparent transition group-hover:text-faint hover:!text-accent"
           aria-label="Adicionar tarefa neste dia"
         >
           <Plus className="h-3 w-3" />
@@ -339,7 +339,7 @@ function DayCell({
           trigger={({ toggle }) => (
             <button
               onClick={toggle}
-              className="mt-0.5 px-1 text-[10px] text-faint transition hover:text-brand"
+              className="mt-0.5 px-1 text-[10px] text-faint transition hover:text-accent"
             >
               Mais {entries.length - MAX}
             </button>
@@ -368,7 +368,7 @@ function DayCell({
         <input
           autoFocus
           placeholder="Nova tarefa"
-          className="mt-1 w-full rounded border border-brand bg-surface px-1.5 py-1 text-[11px] outline-none"
+          className="mt-1 w-full rounded border border-accent bg-surface px-1.5 py-1 text-[11px] outline-none"
           onKeyDown={(e) => {
             const v = (e.target as HTMLInputElement).value.trim();
             if (e.key === "Enter" && v) {
@@ -406,7 +406,7 @@ function Pill({
   });
 
   // A cor vem da 1ª tag; sem tag, cinza (CA da seção 5.9).
-  const color = task.tags[0]?.color ?? "#6B6B73";
+  const color = task.tags[0]?.color ?? "#766A80";
   const due = task.dueAt ? new Date(task.dueAt) : null;
 
   const radius =

@@ -200,7 +200,7 @@ export function TaskDrawer() {
               {t.parent && (
                 <button
                   onClick={() => router.push(`${pathname}?task=${t.parent!.id}`, { scroll: false })}
-                  className="mt-4 flex items-center gap-1 text-[11px] text-faint transition hover:text-brand"
+                  className="mt-4 flex items-center gap-1 text-[11px] text-faint transition hover:text-accent"
                 >
                   {t.parent.title}
                   <ChevronRight className="h-3 w-3" />
@@ -297,7 +297,7 @@ function DrawerHeader({
         <button
           onClick={() => mutate(() => toggleLike(task.id))}
           className={`rounded p-1.5 transition hover:bg-surface ${
-            task.likes > 0 ? "text-brand" : "text-muted hover:text-text"
+            task.likes > 0 ? "text-accent" : "text-muted hover:text-text"
           }`}
           title="Curtir"
         >
@@ -330,7 +330,7 @@ function DrawerHeader({
               });
             }
           }}
-          className="rounded p-1.5 text-muted transition hover:bg-surface hover:text-brand"
+          className="rounded p-1.5 text-muted transition hover:bg-surface hover:text-accent"
           title="Excluir tarefa"
         >
           <Trash2 className="h-3.5 w-3.5" />
@@ -426,7 +426,7 @@ function AprovacaoDePublicacao({
     return (
       <Row label="Instagram">
         <div className="flex items-center gap-2 py-1 text-[12px] text-dim">
-          <Send className="h-3.5 w-3.5 text-[#CE2B34]" />
+          <Send className="h-3.5 w-3.5 text-accent" />
           Publicado em {formatRelativeShort(new Date(task.publicadoEm))}
           {task.instagramPermalink && (
             <a
@@ -457,7 +457,7 @@ function AprovacaoDePublicacao({
             onChange={(e) =>
               mutate(() => setAprovacaoPublicacao(task.id, e.target.checked))
             }
-            className="h-3.5 w-3.5 accent-[#CE2B34]"
+            className="h-3.5 w-3.5 accent-[#8013A8]"
           />
           Aprovado para publicar
         </label>
@@ -696,7 +696,7 @@ function DescriptionField({
             }
           }}
           placeholder="O que precisa ser feito? Aceita **negrito**, _itálico_, listas com - e links."
-          className="w-full resize-y rounded-md border border-line bg-surface px-3 py-2 text-[13px] leading-relaxed outline-none transition focus:border-brand placeholder:text-faint"
+          className="w-full resize-y rounded-md border border-line bg-surface px-3 py-2 text-[13px] leading-relaxed outline-none transition focus:border-accent placeholder:text-faint"
         />
       ) : (
         <div
@@ -748,7 +748,7 @@ function Subtasks({
         {template && task.subtasks.length === 0 && (
           <button
             onClick={() => mutate(() => applySubtaskTemplate(task.id, template.id))}
-            className="inline-flex items-center gap-1 text-[11px] text-brand transition hover:opacity-80"
+            className="inline-flex items-center gap-1 text-[11px] text-accent transition hover:opacity-80"
             title="Cria o fluxo DEMANDAR → PUBLICAÇÃO com prazos retroativos"
           >
             <Wand2 className="h-3 w-3" />
@@ -781,7 +781,7 @@ function Subtasks({
               {due && (
                 <span
                   className={`shrink-0 text-[11px] ${
-                    isOverdue(due, s.completed) ? "text-brand" : "text-faint"
+                    isOverdue(due, s.completed) ? "text-accent" : "text-faint"
                   }`}
                 >
                   {formatDue(due, s.dueHasTime)}
@@ -888,7 +888,7 @@ function Attachments({ task, onUploaded }: { task: DrawerTask; onUploaded: () =>
         <button
           onClick={() => inputRef.current?.click()}
           disabled={busy}
-          className="rounded-md border border-dashed border-faint px-2 py-1 text-[11px] text-faint transition hover:border-brand hover:text-brand disabled:opacity-50"
+          className="rounded-md border border-dashed border-faint px-2 py-1 text-[11px] text-faint transition hover:border-accent hover:text-accent disabled:opacity-50"
         >
           {busy ? "Enviando…" : "+ anexo"}
         </button>
@@ -924,7 +924,7 @@ function Feed({
             onClick={() => setTab(key)}
             className={`-mb-px border-b-2 pb-2 text-[12px] transition ${
               tab === key
-                ? "border-brand font-medium text-text"
+                ? "border-accent font-medium text-text"
                 : "border-transparent text-muted hover:text-dim"
             }`}
           >
@@ -1014,7 +1014,7 @@ function CommentBox({
               }
             }}
             placeholder="Comentar…  (use @nome para mencionar · Ctrl+Enter envia)"
-            className="w-full resize-none rounded-md border border-line bg-surface px-3 py-2 text-[13px] outline-none transition focus:border-brand placeholder:text-faint"
+            className="w-full resize-none rounded-md border border-line bg-surface px-3 py-2 text-[13px] outline-none transition focus:border-accent placeholder:text-faint"
           />
           <div className="mt-1.5 flex justify-end">
             <button className="btn-primary py-1.5 text-[12px]" onClick={send} disabled={!body.trim()}>

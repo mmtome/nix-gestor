@@ -1,4 +1,4 @@
-// Triângulo Gestor — schema de dados (PostgreSQL)
+// NIX Gestor — schema de dados (PostgreSQL)
 // Espelha a seção 4 da especificação: enums e Json nativos.
 
 generator client {
@@ -42,7 +42,7 @@ model User {
   name         String
   email        String   @unique
   passwordHash String
-  avatarColor  String   @default("#CE2B34")
+  avatarColor  String   @default("#8013A8")
   avatarUrl    String?
   role         Role     @default(MEMBER)
   createdAt    DateTime @default(now())
@@ -62,7 +62,7 @@ model Project {
   name        String
   description String?
   icon        String        @default("layout-list")
-  color       String        @default("#CE2B34")
+  color       String        @default("#8013A8")
   status      ProjectStatus @default(ON_TRACK)
   startDate   DateTime?
   endDate     DateTime?

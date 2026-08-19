@@ -38,7 +38,7 @@ export default async function HomePage() {
   const dateLabel = todayLabel();
 
   const stats = [
-    { label: "Atrasadas", value: overdue.length, tone: "text-brand" },
+    { label: "Atrasadas", value: overdue.length, tone: "text-accent" },
     { label: "Para hoje", value: today.length, tone: "text-text" },
     { label: "Esta semana", value: week.length, tone: "text-text" },
     { label: "Concluídas em 7 dias", value: doneThisWeek, tone: "text-ok" },
@@ -47,7 +47,7 @@ export default async function HomePage() {
   return (
     <div className="mx-auto max-w-5xl px-6 py-8">
       <div className="mb-7 flex items-start gap-4">
-        <Symbol className="mt-1 h-8 w-8 shrink-0 text-brand" />
+        <Symbol className="mt-1 h-8 w-8 shrink-0 text-accent" />
         <div>
           <p className="text-[12px] text-faint">{dateLabel}</p>
           <h1 className="text-[24px] font-semibold tracking-tight">
@@ -73,7 +73,7 @@ export default async function HomePage() {
           <h2 className="text-[13px] font-semibold uppercase tracking-wider text-faint">
             Prioridade de hoje
           </h2>
-          <Link href="/my-tasks" className="text-[12px] text-brand transition hover:opacity-80">
+          <Link href="/my-tasks" className="text-[12px] text-accent transition hover:opacity-80">
             ver todas
           </Link>
         </div>
