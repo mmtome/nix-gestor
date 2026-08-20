@@ -4,6 +4,7 @@ import {
   publicarTarefa,
   credencialConfigurada,
   urlPublicaDaArte,
+  ehVideo,
 } from "@/lib/publicador";
 
 /* ============================================================================
@@ -49,9 +50,8 @@ export async function GET(req: Request) {
         title: true,
         dueAt: true,
         attachments: {
-          where: { isImage: true },
           orderBy: { createdAt: "asc" },
-          select: { id: true, fileName: true },
+          select: { id: true, fileName: true, mimeType: true, isImage: true },
         },
       },
     });
@@ -63,8 +63,13 @@ export async function GET(req: Request) {
         titulo: t.title,
         data: t.dueAt?.toISOString() ?? null,
         vencida: !!t.dueAt && t.dueAt <= agora,
-        cards: t.attachments.length,
-        imagens: t.attachments.map((a) => urlPublicaDaArte(a.id)),
+        cards: t.attachments.filter((a) => a.isImage || ehVideo(a.mimeType)).length,
+        midias: t.attachments
+          .filter((a) => a.isImage || ehVideo(a.mimeType))
+          .map((a) => ({
+            tipo: ehVideo(a.mimeType) ? "video" : "imagem",
+            url: urlPublicaDaArte(a.id),
+          })),
       })),
     });
   }

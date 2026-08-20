@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Poppins } from "next/font/google";
+import { Poppins, Anton } from "next/font/google";
 import "./globals.css";
 
 // Poppins é a família tipográfica única da marca (Manual da Marca NIX, seção 09).
@@ -7,6 +7,16 @@ const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+});
+
+// Display condensado, usado só nos títulos do deck de relatório — as
+// apresentações que a agência entrega ao cliente já usam esse peso. A Poppins
+// segue sendo a família da marca em todo o resto do produto.
+const anton = Anton({
+  variable: "--font-anton",
+  subsets: ["latin"],
+  weight: "400",
   display: "swap",
 });
 
@@ -25,7 +35,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={`${poppins.variable} h-full antialiased`}>
+    <html lang="pt-BR" className={`${poppins.variable} ${anton.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );

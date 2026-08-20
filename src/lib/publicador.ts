@@ -34,6 +34,11 @@ import { db } from "@/lib/db";
 
 const GRAPH = "https://graph.instagram.com/v21.0";
 
+/** MP4 e MOV são os únicos contêineres que a Meta aceita. */
+export const ehVideo = (mimeType: string) =>
+  mimeType.startsWith("video/") &&
+  /mp4|quicktime|mov/i.test(mimeType);
+
 export type StatusPublicacao =
   | "publicado"
   | "sem_credencial"
@@ -127,14 +132,20 @@ export async function publicarTarefa(taskId: string): Promise<ResultadoPublicaca
     where: { id: taskId },
     include: {
       // Ordem estável: a sequência dos cards do carrossel é a ordem de anexo.
-      attachments: { where: { isImage: true }, orderBy: { createdAt: "asc" } },
+      attachments: { orderBy: { createdAt: "asc" } },
     },
   });
 
-  const imagens = tarefa.attachments.map((a) => urlPublicaDaArte(a.id));
+  // Só imagem e vídeo publicável entram; PDF de briefing anexado na mesma
+  // tarefa não pode virar card de carrossel.
+  const midias = tarefa.attachments
+    .filter((a) => a.isImage || ehVideo(a.mimeType))
+    .map((a) => ({ url: urlPublicaDaArte(a.id), video: ehVideo(a.mimeType) }));
 
-  if (imagens.length === 0) {
-    return { status: "sem_arte", erro: "A tarefa não tem imagem anexada", imagens };
+  const imagens = midias.map((m) => m.url);
+
+  if (midias.length === 0) {
+    return { status: "sem_arte", erro: "A tarefa não tem imagem nem vídeo anexado", imagens };
   }
 
   if (!credencialConfigurada()) {
@@ -148,25 +159,35 @@ export async function publicarTarefa(taskId: string): Promise<ResultadoPublicaca
   const usuario = process.env.INSTAGRAM_USER_ID!;
   const legenda = (tarefa.legenda ?? tarefa.description ?? "").slice(0, 2200);
 
+  // Transcodificação de vídeo é lenta: 12 tentativas de 3s bastam para foto,
+  // mas derrubariam um reels de um minuto antes de ele ficar pronto.
+  const temVideo = midias.some((m) => m.video);
+  const espera = temVideo ? 60 : 12;
+
   try {
     let containerId: string;
 
-    if (imagens.length === 1) {
-      const c = await chamarGraph(`${usuario}/media`, {
-        image_url: imagens[0],
-        caption: legenda,
-      });
+    if (midias.length === 1) {
+      const unica = midias[0];
+      const c = await chamarGraph(
+        `${usuario}/media`,
+        unica.video
+          ? { media_type: "REELS", video_url: unica.url, caption: legenda }
+          : { image_url: unica.url, caption: legenda },
+      );
       containerId = c.id;
     } else {
       const filhos: string[] = [];
-      for (const url of imagens.slice(0, 10)) {
-        const filho = await chamarGraph(`${usuario}/media`, {
-          image_url: url,
-          is_carousel_item: "true",
-        });
+      for (const m of midias.slice(0, LIMITE_CARROSSEL)) {
+        const filho = await chamarGraph(
+          `${usuario}/media`,
+          m.video
+            ? { media_type: "VIDEO", video_url: m.url, is_carousel_item: "true" }
+            : { image_url: m.url, is_carousel_item: "true" },
+        );
         filhos.push(filho.id);
       }
-      for (const id of filhos) await esperarContainer(id);
+      for (const id of filhos) await esperarContainer(id, espera);
 
       const pai = await chamarGraph(`${usuario}/media`, {
         media_type: "CAROUSEL",
@@ -176,7 +197,7 @@ export async function publicarTarefa(taskId: string): Promise<ResultadoPublicaca
       containerId = pai.id;
     }
 
-    await esperarContainer(containerId);
+    await esperarContainer(containerId, espera);
     const publicado = await chamarGraph(`${usuario}/media_publish`, {
       creation_id: containerId,
     });

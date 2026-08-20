@@ -158,3 +158,76 @@ input[type="time"] {
 .animate-fade {
   animation: nix-fade 0.12s ease-out;
 }
+
+/* ============================================================================
+   Deck do relatório de resultados.
+
+   Cada slide é um container de consulta e sua fonte-base é 1cqw, então toda
+   medida interna escrita em `em` vale um percentual da largura do slide. O
+   mesmo componente serve para a tela e para a página impressa sem media query
+   e sem transform: scale — que borraria o texto no PDF.
+   ========================================================================== */
+
+.deck {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.deck-slide-wrap {
+  container-type: inline-size;
+  width: 100%;
+}
+
+.deck-slide {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  font-size: 1cqw;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -16px rgba(0, 0, 0, 0.5);
+}
+
+/* Display condensado dos títulos — só no deck. A Poppins continua sendo a
+   família da marca; este peso existe para o deck bater com as apresentações
+   que a agência já entrega ao cliente. */
+.deck-display {
+  font-family: var(--font-anton), var(--font-poppins), ui-sans-serif, sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.005em;
+}
+
+@media print {
+  @page {
+    size: 297mm 167mm;
+    margin: 0;
+  }
+
+  html,
+  body {
+    height: auto;
+    background: #fff;
+  }
+
+  .deck {
+    gap: 0;
+  }
+
+  .deck-slide-wrap {
+    width: 297mm;
+    break-after: page;
+    break-inside: avoid;
+  }
+  .deck-slide-wrap:last-child {
+    break-after: auto;
+  }
+
+  .deck-slide {
+    border-radius: 0;
+    box-shadow: none;
+    /* Sem isto o navegador descarta os fundos coloridos e o slide roxo sai
+       branco com texto branco. */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

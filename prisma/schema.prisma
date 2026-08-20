@@ -70,12 +70,14 @@ model Project {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  members   ProjectMember[]
-  sections  Section[]
-  tasks     TaskProject[]
-  tags      Tag[]
-  viewPrefs ViewPreference[]
-  templates SubtaskTemplate[]
+  members    ProjectMember[]
+  sections   Section[]
+  tasks      TaskProject[]
+  tags       Tag[]
+  viewPrefs  ViewPreference[]
+  templates  SubtaskTemplate[]
+  instagram  InstagramAccount?
+  relatorios RelatorioMensal[]
 }
 
 model ProjectMember {
@@ -122,9 +124,13 @@ model Task {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  /* --- publicação automática no Instagram ------------------------------- */
-  /* O check de aprovação é a única ação manual: a partir dele, o post sobe
-     sozinho quando `dueAt` chegar. Ver src/lib/publicador.ts. */
+  /**
+   * --- publicação automática no Instagram -------------------------------
+   */
+  /**
+   * /* O check de aprovação é a única ação manual: a partir dele, o post sobe
+   * sozinho quando `dueAt` chegar. Ver src/lib/publicador.ts.
+   */
   aprovadoParaPublicar Boolean   @default(false)
   aprovadoEm           DateTime?
   aprovadoPorId        String?
@@ -150,7 +156,9 @@ model Task {
 
   @@index([assigneeId, completed, dueAt])
   @@index([parentTaskId])
-  /* O cron varre exatamente por isto: aprovado, ainda não publicado, vencido. */
+  /**
+   * O cron varre exatamente por isto: aprovado, ainda não publicado, vencido.
+   */
   @@index([aprovadoParaPublicar, publicadoEm, dueAt])
 }
 
@@ -287,4 +295,85 @@ model SubtaskTemplate {
   items     Json
 
   project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+/**
+ * ============================================================================
+ * Relatório de resultados — uma apresentação mensal por conta de Instagram.
+ * Fonte híbrida: quando a conta está conectada à API da Meta, os números vêm
+ * de lá; qualquer campo continua editável à mão. O campo `fonte` registra o
+ * que aconteceu em cada relatório.
+ * Os blocos que variam de tamanho (faixas etárias, cidades, gêneros, curva de
+ * horários e os destaques de post) ficam em Json: a forma deles muda conforme
+ * a conta e criar cinco tabelas para isso só tornaria a edição mais difícil.
+ * ==========================================================================
+ */
+
+model InstagramAccount {
+  id          String    @id @default(cuid())
+  projectId   String    @unique
+  username    String
+  igUserId    String?
+  accessToken String?
+  conectadoEm DateTime?
+  criadoEm    DateTime  @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model RelatorioMensal {
+  id        String @id @default(cuid())
+  projectId String
+  ano       Int
+  mes       Int
+
+  cliente String?
+
+  // Visão geral
+  posts            Int     @default(0)
+  feeds            Int     @default(0)
+  reels            Int     @default(0)
+  stories          Int     @default(0)
+  visualizacoes    Int     @default(0)
+  alcance          Int     @default(0)
+  mediaViewReels   Int     @default(0)
+  mediaViewStories Int     @default(0)
+  freqExibicao     Float   @default(0)
+  taxaEngajamento  Float   @default(0)
+  taxaCrescimento  Float   @default(0)
+  formatoTop       String?
+
+  // Audiência
+  seguidores      Int     @default(0)
+  seguidoresDelta Int     @default(0)
+  idades          Json    @default("[]")
+  localizacoes    Json    @default("[]")
+  generos         Json    @default("[]")
+  horarios        Json    @default("[]")
+  notaAudiencia   String?
+
+  // Destaques de desempenho
+  topVisualizacoes  Json @default("[]")
+  piorVisualizacoes Json @default("[]")
+  topInteracoes     Json @default("[]")
+  piorInteracoes    Json @default("[]")
+
+  // Totais do mês — alimentam os gráficos comparativos do ano
+  interacoes        Int @default(0)
+  curtidas          Int @default(0)
+  comentarios       Int @default(0)
+  compartilhamentos Int @default(0)
+  salvos            Int @default(0)
+  cliquesLink       Int @default(0)
+
+  conclusao String?
+
+  fonte        String   @default("manual")
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, ano, mes])
+  @@index([projectId, ano])
 }

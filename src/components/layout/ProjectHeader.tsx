@@ -21,6 +21,7 @@ const TABS = [
   { seg: "board", label: "Quadro" },
   { seg: "calendar", label: "Calendário" },
   { seg: "dashboard", label: "Painel" },
+  { seg: "relatorio", label: "Relatório" },
 ];
 
 type Member = {
@@ -146,7 +147,8 @@ export function ProjectHeader({
       <nav className="mt-3 flex gap-1">
         {TABS.map((t) => {
           const href = `/projects/${project.id}/${t.seg}`;
-          const active = pathname === href;
+          // startsWith cobre as subpáginas: um relatório aberto mantém a aba marcada.
+          const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
             <Link
               key={t.seg}

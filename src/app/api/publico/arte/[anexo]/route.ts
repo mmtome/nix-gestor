@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { readAttachment } from "@/lib/storage";
-import { assinaturaConfere } from "@/lib/publicador";
+import { assinaturaConfere, ehVideo } from "@/lib/publicador";
 
 /* ============================================================================
    Arte de um post, servida SEM sessão — para a Meta conseguir buscá-la.
@@ -12,7 +12,8 @@ import { assinaturaConfere } from "@/lib/publicador";
 
      1. assinatura HMAC do id do anexo na querystring;
      2. a tarefa precisa estar aprovada para publicar;
-     3. só serve imagem.
+     3. só serve imagem ou vídeo publicável — nunca um PDF de briefing que
+        esteja anexado na mesma tarefa.
 
    Desmarcar a aprovação fecha a porta na hora.
 
@@ -35,7 +36,9 @@ export async function GET(
     include: { task: { select: { aprovadoParaPublicar: true } } },
   });
 
-  if (!anexo || !anexo.isImage) {
+  const video = !!anexo && ehVideo(anexo.mimeType);
+
+  if (!anexo || (!anexo.isImage && !video)) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
   if (!anexo.task.aprovadoParaPublicar) {
@@ -51,6 +54,20 @@ export async function GET(
     arquivo.body instanceof Uint8Array
       ? Buffer.from(arquivo.body)
       : Buffer.from(new Uint8Array(await new Response(arquivo.body as ReadableStream).arrayBuffer()));
+
+  /* Vídeo sai como está. A Meta exige MP4/MOV com H.264 + AAC e transcodifica
+     por conta dela; reprocessar aqui só perderia qualidade e arriscaria
+     entregar um codec que ela recusa. */
+  if (video) {
+    return new NextResponse(new Uint8Array(bytes), {
+      headers: {
+        "Content-Type": anexo.mimeType,
+        "Content-Length": String(bytes.length),
+        "Accept-Ranges": "bytes",
+        "Cache-Control": "no-store, private",
+      },
+    });
+  }
 
   const sharp = (await import("sharp")).default;
   const jpeg = await sharp(bytes).flatten({ background: "#15101A" }).jpeg({ quality: 92 }).toBuffer();

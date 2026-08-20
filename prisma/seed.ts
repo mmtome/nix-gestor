@@ -15,6 +15,7 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { initialOrders, between } from "../src/lib/ordering";
 import { POSTS, STORIES, BACKLOG } from "./conteudo-nix-setembro";
+import { aplicarExemploUrs } from "./exemplo-urs";
 
 const db = new PrismaClient();
 
@@ -402,6 +403,15 @@ ALCANCE › AUTORIDADE › RELACIONAMENTO › VENDAS › repete.
     `Planejamento NIX: ${peças} tarefas (${POSTS.length} feed, ${STORIES.length} stories, ` +
       `${BACKLOG.length} pautas) + ${subtarefas} subtarefas de fluxo`,
   );
+
+  /* ------------------- projeto de exemplo com relatório -------------------- */
+
+  await aplicarExemploUrs(db, [
+    { userId: matheus.id, role: "OWNER" },
+    { userId: socio.id, role: "EDITOR" },
+    { userId: social.id, role: "EDITOR" },
+  ]);
+  console.log("Uberaba Rodeo Show: projeto de exemplo com o relatório de julho/2026");
 
   console.log("");
   console.log("  Acesso:  matheusmigueltome@gmail.com  ·  senha: nix");
