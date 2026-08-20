@@ -155,9 +155,11 @@ function Cartao({ titulo, children }: { titulo: string; children: React.ReactNod
   );
 }
 
-/** Miniatura de post. Sem imagem, o número vira o próprio bloco. */
+/** Miniatura de post. Sem imagem, o próprio bloco carrega o rótulo. */
 function Miniatura({ d, tom }: { d: DestaqueResolvido; tom: "alta" | "baixa" }) {
   const cor = tom === "alta" ? "bg-[#B910FF]" : "bg-[#6E327C]";
+  const temImagem = !!(d.src || d.imagemUrl);
+
   return (
     <figure className="flex min-w-0 flex-col gap-[0.6em]">
       {tom === "alta" && (
@@ -179,7 +181,10 @@ function Miniatura({ d, tom }: { d: DestaqueResolvido; tom: "alta" | "baixa" }) 
           </div>
         )}
       </div>
-      <figcaption className="deck-display text-[1.7em] text-[#231A28]">{d.rotulo}</figcaption>
+      {/* Sem imagem o rótulo já está dentro do bloco; repetir embaixo é ruído. */}
+      {temImagem && (
+        <figcaption className="deck-display text-[1.7em] text-[#231A28]">{d.rotulo}</figcaption>
+      )}
       {tom === "baixa" && (
         <span
           className={`${cor} self-start px-[0.9em] py-[0.28em] text-[1.35em] font-bold tabular-nums text-white`}
@@ -242,12 +247,12 @@ export function Deck({ d }: { d: DadosDeck }) {
   const multiplo = multiploDeAlcance(d.alcance, d.seguidores);
   const mesNome = nomeDoMes(d.mes);
 
-  const principais = d.comparativos.filter((c) =>
-    ["visualizacoes", "interacoes", "curtidas"].includes(c.chave),
-  );
-  const secundarios = d.comparativos.filter((c) =>
-    ["comentarios", "compartilhamentos", "salvos", "cliquesLink"].includes(c.chave),
-  );
+  const principais = d.comparativos
+    .filter((c) => ["visualizacoes", "interacoes", "curtidas"].includes(c.chave))
+    .filter(temDados);
+  const secundarios = d.comparativos
+    .filter((c) => ["comentarios", "compartilhamentos", "salvos", "cliquesLink"].includes(c.chave))
+    .filter(temDados);
 
   const bullets = (d.conclusao ?? "")
     .split("\n")
@@ -258,12 +263,16 @@ export function Deck({ d }: { d: DadosDeck }) {
     <div className="deck">
       {/* 01 — Capa ------------------------------------------------------- */}
       <Slide variante="roxo">
-        <span
+        <div
           aria-hidden
-          className="deck-display pointer-events-none absolute -right-[1.5em] top-1/2 -translate-y-1/2 text-[34em] leading-[0.8] text-white/[0.10]"
+          className="deck-display pointer-events-none absolute right-[1.4em] top-1/2 flex -translate-y-1/2 flex-col text-[11em] leading-[0.78] text-white/[0.13]"
         >
-          {d.ano}
-        </span>
+          {String(d.ano)
+            .split("")
+            .map((n, i) => (
+              <span key={i}>{n}</span>
+            ))}
+        </div>
         <div className="relative flex h-full flex-col justify-center px-[6em]">
           <svg viewBox="0 0 873.4 806.4" className="h-[5.4em] w-[5.4em]" aria-hidden="true">
             <circle cx="400" cy="406.4" r="322.46" fill="none" stroke="#fff" strokeWidth="155.08" />
@@ -348,7 +357,7 @@ export function Deck({ d }: { d: DadosDeck }) {
               </div>
             </div>
 
-            <div className="flex flex-col justify-start gap-[1.8em]">
+            <div className="flex flex-col justify-between">
               <Metrica rotulo="Média de visualização · reels" valor={numero(d.mediaViewReels)} />
               <Metrica
                 rotulo="Taxa de engajamento do perfil"
@@ -357,7 +366,7 @@ export function Deck({ d }: { d: DadosDeck }) {
               <Metrica rotulo="Média de visualização · stories" valor={numero(d.mediaViewStories)} />
             </div>
 
-            <div className="flex flex-col justify-start gap-[1.8em]">
+            <div className="flex flex-col justify-between">
               <Metrica rotulo="Frequência de exibição" valor={decimal(d.freqExibicao)} />
               <Metrica
                 rotulo="Taxa de crescimento de seguidores"
@@ -404,7 +413,7 @@ export function Deck({ d }: { d: DadosDeck }) {
               {d.generos.length ? (
                 <GraficoPizza fatias={d.generos} />
               ) : (
-                <p className="text-[12px] text-faint">Não preenchido.</p>
+                <p className="text-[12px] text-[#9A8FA3]">Não preenchido.</p>
               )}
             </Cartao>
           </div>
@@ -453,14 +462,14 @@ export function Deck({ d }: { d: DadosDeck }) {
       )}
 
       {/* 08 e 09 — Comparativos ------------------------------------------ */}
-      {principais.some(temDados) && (
+      {principais.length > 0 && (
         <Slide numeroSlide={8}>
           <div className="flex h-full flex-col px-[4em] pb-[5em] pt-[3.4em]">
             <Titulo>Comparativos</Titulo>
             <p className="mt-[0.4em] text-[1.4em] text-[#4E4257]">
               {d.ano} · o mês do relatório aparece em âmbar
             </p>
-            <div className="mt-[1.6em] grid flex-1 grid-cols-3 items-start gap-[2em]">
+            <div className="mt-[1.6em] grid min-h-0 flex-1 grid-cols-3 gap-[2em]">
               {principais.map((c) => (
                 <GraficoBarras key={c.chave} serie={c.serie} titulo={c.titulo} destaque={d.mes} />
               ))}
@@ -469,14 +478,14 @@ export function Deck({ d }: { d: DadosDeck }) {
         </Slide>
       )}
 
-      {secundarios.some(temDados) && (
+      {secundarios.length > 0 && (
         <Slide numeroSlide={9}>
           <div className="flex h-full flex-col px-[4em] pb-[5em] pt-[3.4em]">
             <Titulo>Comparativos</Titulo>
             <p className="mt-[0.4em] text-[1.4em] text-[#4E4257]">
               Interações detalhadas por mês
             </p>
-            <div className="mt-[1.6em] grid flex-1 grid-cols-4 items-start gap-[1.6em]">
+            <div className="mt-[1.6em] grid min-h-0 flex-1 grid-cols-4 gap-[1.6em]">
               {secundarios.map((c) => (
                 <GraficoBarras key={c.chave} serie={c.serie} titulo={c.titulo} destaque={d.mes} />
               ))}
@@ -513,12 +522,16 @@ export function Deck({ d }: { d: DadosDeck }) {
 
       {/* 11 — Obrigado ---------------------------------------------------- */}
       <Slide variante="roxo">
-        <span
+        <div
           aria-hidden
-          className="deck-display pointer-events-none absolute -left-[2em] top-1/2 -translate-y-1/2 text-[30em] leading-[0.8] text-white/[0.08]"
+          className="deck-display pointer-events-none absolute left-[1.4em] top-1/2 flex -translate-y-1/2 flex-col text-[11em] leading-[0.78] text-white/[0.10]"
         >
-          {d.ano}
-        </span>
+          {String(d.ano)
+            .split("")
+            .map((n, i) => (
+              <span key={i}>{n}</span>
+            ))}
+        </div>
         <div className="relative flex h-full flex-col items-center justify-center">
           <svg viewBox="0 0 873.4 806.4" className="h-[6.5em] w-[6.5em]" aria-hidden="true">
             <circle cx="400" cy="406.4" r="322.46" fill="none" stroke="#fff" strokeWidth="155.08" />

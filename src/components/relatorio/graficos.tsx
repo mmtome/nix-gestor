@@ -4,6 +4,10 @@
  * Não usam Recharts de propósito: o deck é feito para virar PDF pela impressão
  * do navegador, e componente que mede o container em runtime sai em branco ou
  * cortado na página impressa. SVG com viewBox fixo imprime igual à tela.
+ *
+ * As cores são literais, não tokens do tema. Os tokens do app são calibrados
+ * para a interface escura e ficam ilegíveis sobre o slide branco — este
+ * módulo só existe dentro do deck, então o fundo claro é premissa.
  */
 
 import { compacto, numero, porcento, MESES_CURTOS } from "@/lib/relatorio";
@@ -132,8 +136,8 @@ export function GraficoPizza({ fatias }: { fatias: Fatia[] }) {
         {setores.map((s) => (
           <li key={s.rotulo} className="flex items-center gap-2 text-[12px]">
             <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: s.cor }} />
-            <span className="text-dim">{s.rotulo}</span>
-            <span className="font-semibold tabular-nums text-text">{porcento(s.pct, 1)}</span>
+            <span className="text-[#4E4257]">{s.rotulo}</span>
+            <span className="font-semibold tabular-nums text-[#231A28]">{porcento(s.pct, 1)}</span>
           </li>
         ))}
       </ul>
@@ -172,12 +176,17 @@ export function GraficoBarras({
   const reguas = Array.from({ length: 4 }, (_, i) => (teto / 3) * i);
 
   return (
-    <figure className="min-w-0">
-      <figcaption className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-text">
+    <figure className="flex min-h-0 min-w-0 flex-col">
+      <figcaption className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#231A28]">
         {titulo}
       </figcaption>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img"
-           aria-label={`${titulo} por mês`}>
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="min-h-0 w-full flex-1"
+        preserveAspectRatio="xMidYMax meet"
+        role="img"
+        aria-label={`${titulo} por mês`}
+      >
         {reguas.map((v) => (
           <g key={v}>
             <line x1={M.left} y1={M.top + ih - alturaDe(v)} x2={W - M.right}
@@ -245,7 +254,7 @@ export function GraficoBarras({
 
 export function ListaComBarra({ fatias }: { fatias: Fatia[] }) {
   if (!fatias.length) {
-    return <p className="text-[12px] text-faint">Não preenchido.</p>;
+    return <p className="text-[12px] text-[#9A8FA3]">Não preenchido.</p>;
   }
   const max = Math.max(...fatias.map((f) => f.pct), 1);
 
@@ -254,12 +263,12 @@ export function ListaComBarra({ fatias }: { fatias: Fatia[] }) {
       {fatias.map((f, i) => (
         <li key={f.rotulo + i}>
           <div className="mb-1 flex items-baseline justify-between gap-3">
-            <span className="truncate text-[12.5px] text-dim">{f.rotulo}</span>
-            <span className="shrink-0 text-[12.5px] font-semibold tabular-nums text-text">
+            <span className="truncate text-[12.5px] text-[#4E4257]">{f.rotulo}</span>
+            <span className="shrink-0 text-[12.5px] font-semibold tabular-nums text-[#231A28]">
               {porcento(f.pct, 2)}
             </span>
           </div>
-          <div className="h-[5px] w-full overflow-hidden rounded-full bg-line">
+          <div className="h-[5px] w-full overflow-hidden rounded-full bg-[#EFE7F3]">
             <div
               className="h-full rounded-full"
               style={{
@@ -309,8 +318,8 @@ export function BarraComposicao({
               className="h-2.5 w-2.5 shrink-0 rounded-sm"
               style={{ background: CORES_FATIA[i % CORES_FATIA.length] }}
             />
-            <span className="text-dim">{p.rotulo}</span>
-            <span className="ml-auto font-semibold tabular-nums text-text">
+            <span className="text-[#4E4257]">{p.rotulo}</span>
+            <span className="ml-auto font-semibold tabular-nums text-[#231A28]">
               {numero(p.valor)}
             </span>
           </li>
