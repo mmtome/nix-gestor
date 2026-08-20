@@ -198,8 +198,12 @@ input[type="time"] {
 }
 
 @media print {
+  /* 297mm de largura em 16:9 dá 167,0625mm de altura. A página é declarada um
+     pouco mais alta de propósito: com a altura exata, o arredondamento do
+     navegador fazia cada slide vazar alguns centésimos de milímetro e sair
+     uma folha em branco entre um e outro. */
   @page {
-    size: 297mm 167mm;
+    size: 297mm 167.6mm;
     margin: 0;
   }
 
