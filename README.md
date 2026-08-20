@@ -38,9 +38,10 @@ npm run dev             # http://localhost:3000
 
 ## O que já vem carregado
 
-**Nada de conteúdo — de propósito.** O seed cria a equipe e um único projeto,
-`Modelo · Planejamento de Conteúdo`, sem nenhuma tarefa dentro. Ele existe para
-ser **duplicado a cada cliente novo**, já com a estrutura montada:
+O seed cria a equipe e três projetos: um modelo vazio e dois exemplos.
+
+**`Modelo · Planejamento de Conteúdo`** — sem nenhuma tarefa, de propósito.
+Existe para ser **duplicado a cada cliente novo**, já com a estrutura montada:
 
 - **6 seções**: `Semana 1` a `Semana 4`, `Banco de pautas` e `Publicado`.
 - **8 tags**: os 4 tipos de conteúdo (ALCANCE, AUTORIDADE, RELACIONAMENTO,
@@ -49,9 +50,97 @@ ser **duplicado a cada cliente novo**, já com a estrutura montada:
   EDIÇÃO, LEGENDA, APROVAÇÃO e PUBLICAÇÃO — com prazos relativos à data de
   publicação.
 
+**`Planejamento NIX`** — um mês inteiro do Instagram da própria agência
+(setembro/2026): 14 peças de feed em dias ímpares, 8 stories, 10 pautas no
+banco e 84 subtarefas de fluxo. Mix de 5 carrosséis, 5 estáticos e 4 reels.
+O conteúdo está em [`prisma/conteudo-nix-setembro.ts`](prisma/conteudo-nix-setembro.ts).
+
+**`Uberaba Rodeo Show`** — conta de cliente, existe para demonstrar a aba
+Relatório com o mês de julho/2026 preenchido.
+
+---
+
+## Relatório de resultados
+
+Cada projeto tem a aba **Relatório**: uma apresentação mensal de 11 slides 16:9,
+no padrão que a agência entrega ao cliente, com botão de **Baixar PDF**.
+
+```
+Aba Relatório
+├── lista de relatórios por ano + criar novo (um por mês)
+├── conta do Instagram do projeto (opcional)
+└── /relatorio/[id]
+    ├── Apresentar → o deck
+    └── Editar     → formulário na ordem dos slides
+```
+
+**Fonte híbrida.** Sem conta conectada, tudo é manual e funciona. Com conta
+conectada aparece *Importar da API*, que preenche o que a Graph API souber
+responder. A importação **só sobrescreve campo que veio com valor**, então o que
+foi digitado à mão sobrevive a uma reimportação. O campo `fonte`
+(manual · api · misto) aparece no cabeçalho — número ajustado à mão não se
+disfarça de medição.
+
+**O que a API não entrega**, e por isso segue manual (ver `src/lib/insights.ts`):
+
+| Campo | Motivo |
+|---|---|
+| Histórico mês a mês | Só existe se guardarmos snapshots; o comparativo do ano sai dos nossos próprios relatórios |
+| Curva de horários | A métrica `online_followers` foi descontinuada pela Meta |
+| Demografia | A Meta só responde com 100+ seguidores — abaixo disso devolve vazio, não erro |
+| Stories | Insights expiram em 24h |
+
+**PDF.** O botão abre a impressão do navegador. Cada slide é um *container de
+consulta* com fonte-base `1cqw`, então toda medida interna em `em` é um
+percentual da largura — o mesmo componente serve tela e página sem
+`transform: scale`, que borraria o texto no PDF. Os gráficos são SVG escritos à
+mão em vez de Recharts: componente que mede o container em runtime sai em branco
+na página impressa.
+
+> Ao imprimir, marque **Gráficos de fundo**. Sem isso o navegador descarta os
+> fundos coloridos e os slides roxos saem brancos com texto branco.
+
+O projeto de exemplo **Uberaba Rodeo Show** traz o relatório de julho/2026
+preenchido. A procedência de cada número está documentada em
+[`prisma/exemplo-urs.ts`](prisma/exemplo-urs.ts).
+
+---
+
+## Publicação automática no Instagram
+
+Marcar **aprovado para publicar** numa tarefa coloca a peça na fila. O cron
+diário (`/api/cron/publicar`) varre as aprovadas cuja data já chegou e publica.
+Suporta **imagem única, carrossel (até 10) e vídeo** — vídeo sozinho vira REELS,
+dentro de carrossel vira VIDEO.
+
+Como a Meta busca a mídia por URL e o Blob é privado, existe
+`/api/publico/arte/[anexo]`: serve o anexo sem sessão, com assinatura HMAC e
+**só enquanto a tarefa estiver aprovada**. Desmarcar a aprovação fecha a porta
+na hora.
+
+### O que falta para ligar — nada disso existe ainda
+
+1. Conta do cliente como **Business ou Creator**, vinculada a uma página do Facebook.
+2. App no [Meta for Developers](https://developers.facebook.com) com os produtos
+   *Instagram Graph API* e *Facebook Login*.
+3. Permissões: `instagram_basic` e `instagram_manage_insights` (relatório) e
+   `instagram_content_publish` (publicação).
+4. **App Review** da Meta para usar as permissões fora das contas de teste.
+5. Token de longa duração (60 dias, renovável) por conta.
+
+Com o token em mãos, há dois caminhos: colar em *Relatório › Conta do Instagram*
+(por projeto) ou definir `INSTAGRAM_USER_ID` e `INSTAGRAM_PUBLISH_TOKEN` como
+variáveis de ambiente (conta única). Antes de publicar de verdade, confira a fila
+com `/api/cron/publicar?dry=1` — mostra o que sairia e as URLs, sem enviar nada.
+
+> **Precisão do agendamento.** O plano Hobby da Vercel só permite cron diário,
+> então o post sai no horário do cron e não no horário exato da tarefa. Publicar
+> na hora marcada exige um plano com cron de hora em hora.
+
 ---
 
 ## Identidade visual
+
 
 Tudo travado no **Manual da Marca da Agência NIX v1.0**:
 
