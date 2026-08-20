@@ -50,7 +50,7 @@ export function ProjectHeader({
   const status = project.status as ProjectStatus;
 
   return (
-    <header className="shrink-0 border-b border-line bg-graphite px-5 pt-3.5">
+    <header className="shrink-0 border-b border-line bg-graphite px-5 pt-3.5 print:hidden">
       <div className="flex items-center gap-2.5">
         <span
           className="h-4 w-4 shrink-0 rounded-[4px]"
