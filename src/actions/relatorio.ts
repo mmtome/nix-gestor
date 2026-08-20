@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { assertProjectAccess } from "@/lib/permissions";
 import { refreshAll } from "@/lib/revalidate";
-import { importarMes } from "@/lib/insights";
+import { importarMes, identificarConta } from "@/lib/insights";
 
 /* ============================================================================
    Relatório de resultados — criação, edição e importação.
@@ -192,11 +192,19 @@ export async function importarDaApi(id: string) {
 /* --------------------------------------------------------- conta do IG */
 
 const contaSchema = z.object({
-  username: z.string().trim().min(1).max(60),
+  username: z.string().trim().max(60).optional(),
   igUserId: z.string().trim().max(60).nullable().optional(),
   accessToken: z.string().trim().max(600).nullable().optional(),
 });
 
+/**
+ * Salva a conta do projeto.
+ *
+ * Quando vem token novo, pergunta à Meta quem ele é e grava o id e o usuário
+ * daí — é a única forma de garantir que os três campos combinam. Digitar o id
+ * à mão é a origem mais comum de "importação não trouxe nada": a Meta aceita
+ * um id de outra conta e devolve vazio em vez de erro.
+ */
 export async function salvarContaInstagram(
   projectId: string,
   input: z.infer<typeof contaSchema>,
@@ -205,14 +213,41 @@ export async function salvarContaInstagram(
   await assertProjectAccess(user, projectId, true);
   const dados = contaSchema.parse(input);
 
-  const conectadoEm = dados.igUserId && dados.accessToken ? new Date() : null;
+  const atual = await db.instagramAccount.findUnique({
+    where: { projectId },
+    select: { username: true, igUserId: true, accessToken: true },
+  });
+
+  const token = dados.accessToken || atual?.accessToken || null;
+  let igUserId = dados.igUserId || atual?.igUserId || null;
+  let username = dados.username || atual?.username || "";
+
+  // Só interroga a Meta quando há token novo — evita uma chamada de rede a
+  // cada edição de nome.
+  if (dados.accessToken) {
+    const id = await identificarConta(dados.accessToken);
+    if (!id.ok) {
+      return {
+        ok: false as const,
+        erro: `A Meta recusou este token: ${id.motivo}`,
+      };
+    }
+    igUserId = id.igUserId;
+    if (id.username) username = id.username;
+  }
+
+  if (!username) {
+    return { ok: false as const, erro: "Informe o usuário da conta." };
+  }
+
+  const conectadoEm = igUserId && token ? new Date() : null;
 
   await db.instagramAccount.upsert({
     where: { projectId },
-    create: { projectId, ...dados, conectadoEm },
-    update: { ...dados, conectadoEm },
+    create: { projectId, username, igUserId, accessToken: token, conectadoEm },
+    update: { username, igUserId, accessToken: token, conectadoEm },
   });
 
   refreshAll();
-  return { ok: true as const };
+  return { ok: true as const, username, igUserId };
 }

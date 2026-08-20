@@ -99,21 +99,31 @@ export function ContaInstagram({
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
   const [username, setUsername] = useState(inicial?.username ?? "");
-  const [igUserId, setIgUserId] = useState(inicial?.igUserId ?? "");
   const [token, setToken] = useState("");
-  const [salvo, setSalvo] = useState(false);
+  const [resultado, setResultado] = useState<
+    { tom: "ok" | "erro"; texto: string } | null
+  >(null);
   const [salvando, iniciar] = useTransition();
 
   function salvar() {
+    setResultado(null);
     iniciar(async () => {
-      await salvarContaInstagram(projectId, {
+      const r = await salvarContaInstagram(projectId, {
         username,
-        igUserId: igUserId || null,
         // Campo em branco mantém o token atual em vez de apagá-lo.
         ...(token ? { accessToken: token } : {}),
       });
+      if (!r.ok) {
+        setResultado({ tom: "erro", texto: r.erro });
+        return;
+      }
       setToken("");
-      setSalvo(true);
+      setResultado({
+        tom: "ok",
+        texto: r.igUserId
+          ? `Conectado como @${r.username} (id ${r.igUserId}).`
+          : "Conta salva.",
+      });
       router.refresh();
     });
   }
@@ -149,17 +159,14 @@ export function ContaInstagram({
                 onChange={(e) => setUsername(e.target.value.replace(/^@/, ""))}
               />
             </label>
-            <label>
+            <div>
               <span className="mb-1 block text-[11px] font-medium text-dim">
                 Instagram User ID
               </span>
-              <input
-                className="field tabular-nums"
-                placeholder="17841400000000000"
-                value={igUserId}
-                onChange={(e) => setIgUserId(e.target.value.trim())}
-              />
-            </label>
+              <p className="field tabular-nums text-faint">
+                {inicial?.igUserId || "preenchido a partir do token"}
+              </p>
+            </div>
           </div>
 
           <label>
@@ -169,25 +176,33 @@ export function ContaInstagram({
             <input
               className="field"
               type="password"
-              placeholder={inicial?.temToken ? "•••••• (deixe em branco para manter)" : "EAAG..."}
+              placeholder={inicial?.temToken ? "•••••• (deixe em branco para manter)" : "IGAA..."}
               value={token}
               onChange={(e) => setToken(e.target.value)}
             />
           </label>
 
           <p className="text-[11px] leading-relaxed text-faint">
-            O token precisa das permissões <code>instagram_basic</code> e{" "}
-            <code>instagram_manage_insights</code>, e a conta precisa ser Business ou Creator
-            vinculada a uma página do Facebook. Sem isso a Meta responde vazio, não erro — e o
-            relatório fica em branco sem avisar por quê.
+            Cole o token e o app pergunta à Meta de quem ele é — o User ID vem daí, então não
+            há como errar de conta. O token precisa dos escopos{" "}
+            <code>instagram_business_basic</code> e{" "}
+            <code>instagram_business_manage_insights</code>, mais{" "}
+            <code>instagram_business_content_publish</code> se for publicar. A conta precisa ser
+            Business ou Creator.
           </p>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button onClick={salvar} disabled={salvando || !username} className="btn-primary">
               {salvando && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               Salvar conta
             </button>
-            {salvo && <span className="text-[11.5px] text-ok">Conta salva.</span>}
+            {resultado && (
+              <span
+                className={`text-[11.5px] ${resultado.tom === "ok" ? "text-ok" : "text-warn"}`}
+              >
+                {resultado.texto}
+              </span>
+            )}
           </div>
         </div>
       )}

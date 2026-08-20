@@ -19,11 +19,20 @@ import "server-only";
  * - **Stories além de 24h.** Insights de story expiram. Se a importação rodar
  *   depois do fim do mês, os stories antigos já não respondem.
  *
+ * Escopos que o token precisa carregar:
+ *   `instagram_business_basic`             perfil e mídias
+ *   `instagram_business_manage_insights`   métricas de conta e demografia
+ *   `instagram_business_content_publish`   só para a publicação automática
+ *
  * Nada aqui lança para o chamador: sem credencial ou com a API fora, a função
  * devolve o motivo e a UI segue funcionando no modo manual.
  */
 
-const GRAPH = "https://graph.facebook.com/v21.0";
+/* Mesmo host do publicador — "Instagram API with Instagram Login". Os dois
+   módulos PRECISAM falar a mesma API: são flavors diferentes da Meta, com
+   escopos e tokens próprios, e um token só não serve para os dois. Esta é a
+   variante que não exige página do Facebook vinculada. */
+const GRAPH = "https://graph.instagram.com/v21.0";
 
 export type ResultadoImportacao =
   | { ok: true; dados: DadosImportados; avisos: string[] }
@@ -57,6 +66,44 @@ export function credencialDaConta(
   const token = conta?.accessToken || process.env.INSTAGRAM_PUBLISH_TOKEN || "";
   if (!igUserId || !token) return null;
   return { igUserId, token };
+}
+
+/**
+ * Descobre o id e o usuário da conta a partir do token.
+ *
+ * Existe para tirar um passo manual da configuração: o "Instagram User ID" é
+ * um número de 17 dígitos que ninguém tem à mão, e digitá-lo errado produz um
+ * erro da Meta que não diz qual dos dois campos está errado. Com o token em
+ * mãos, a própria API responde quem ele é.
+ */
+export async function identificarConta(
+  token: string,
+): Promise<{ ok: true; igUserId: string; username: string } | { ok: false; motivo: string }> {
+  try {
+    const res = await fetch(
+      `${GRAPH}/me?fields=user_id,username&access_token=${encodeURIComponent(token)}`,
+      { cache: "no-store" },
+    );
+    const json = (await res.json().catch(() => ({}))) as {
+      user_id?: string;
+      id?: string;
+      username?: string;
+      error?: { message?: string };
+    };
+    if (!res.ok) {
+      return { ok: false, motivo: json.error?.message || `Graph ${res.status}` };
+    }
+    const igUserId = json.user_id || json.id;
+    if (!igUserId) {
+      return { ok: false, motivo: "A Meta respondeu sem o id da conta." };
+    }
+    return { ok: true, igUserId, username: json.username ?? "" };
+  } catch (e) {
+    return {
+      ok: false,
+      motivo: e instanceof Error ? e.message : "Não foi possível falar com a Meta",
+    };
+  }
 }
 
 async function buscar<T>(caminho: string, cred: Credencial): Promise<T> {
@@ -135,7 +182,7 @@ async function demografia(
       }[];
     }>(
       `${cred.igUserId}/insights?metric=follower_demographics&period=lifetime` +
-        `&metric_type=total_value&breakdown=${quebra}`,
+        `&metric_type=total_value&timeframe=this_month&breakdown=${quebra}`,
       cred,
     );
     const linhas = r.data?.[0]?.total_value?.breakdowns?.[0]?.results ?? [];
