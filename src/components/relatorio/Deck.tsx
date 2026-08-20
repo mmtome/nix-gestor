@@ -469,7 +469,10 @@ export function Deck({ d }: { d: DadosDeck }) {
             <p className="mt-[0.4em] text-[1.4em] text-[#4E4257]">
               {d.ano} · o mês do relatório aparece em âmbar
             </p>
-            <div className="mt-[1.6em] grid min-h-0 flex-1 grid-cols-3 gap-[2em]">
+            <div
+              className="mt-[1.6em] grid min-h-0 flex-1 gap-[2em]"
+              style={{ gridTemplateColumns: `repeat(${principais.length}, minmax(0, 1fr))` }}
+            >
               {principais.map((c) => (
                 <GraficoBarras key={c.chave} serie={c.serie} titulo={c.titulo} destaque={d.mes} />
               ))}
@@ -485,7 +488,10 @@ export function Deck({ d }: { d: DadosDeck }) {
             <p className="mt-[0.4em] text-[1.4em] text-[#4E4257]">
               Interações detalhadas por mês
             </p>
-            <div className="mt-[1.6em] grid min-h-0 flex-1 grid-cols-4 gap-[1.6em]">
+            <div
+              className="mt-[1.6em] grid min-h-0 flex-1 gap-[1.6em]"
+              style={{ gridTemplateColumns: `repeat(${secundarios.length}, minmax(0, 1fr))` }}
+            >
               {secundarios.map((c) => (
                 <GraficoBarras key={c.chave} serie={c.serie} titulo={c.titulo} destaque={d.mes} />
               ))}

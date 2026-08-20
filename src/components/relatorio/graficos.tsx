@@ -183,7 +183,7 @@ export function GraficoBarras({
       <svg
         viewBox={`0 0 ${W} ${H}`}
         className="min-h-0 w-full flex-1"
-        preserveAspectRatio="xMidYMax meet"
+        preserveAspectRatio="xMidYMid meet"
         role="img"
         aria-label={`${titulo} por mês`}
       >
