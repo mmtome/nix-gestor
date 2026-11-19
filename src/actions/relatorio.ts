@@ -185,6 +185,9 @@ export async function importarDaApi(id: string) {
   return {
     ok: true as const,
     campos: Object.keys(preenchidos).length,
+    // A tela guarda o relatório em estado local: sem os valores de volta, ela
+    // continuaria mostrando o que havia antes da importação.
+    dados: preenchidos as Partial<CamposRelatorio>,
     avisos: r.avisos,
   };
 }

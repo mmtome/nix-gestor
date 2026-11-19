@@ -141,6 +141,7 @@ export function RelatorioView({
       setAviso({ tom: "erro", texto: r.erro ?? "Falha na importação." });
       return;
     }
+    setEstado((e) => ({ ...e, ...(r.dados as Partial<EstadoRelatorio>) }));
     setAviso({
       tom: "ok",
       texto: `${r.campos} campos importados. ${r.avisos.join(" ")}`,
