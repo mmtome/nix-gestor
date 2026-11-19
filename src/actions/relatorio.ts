@@ -164,13 +164,10 @@ export async function importarDaApi(id: string) {
     select: { igUserId: true, accessToken: true },
   });
 
-  const r = await importarMes(conta, alvo.ano, alvo.mes);
+  const r = await importarMes(alvo.projectId, conta, alvo.ano, alvo.mes);
   if (!r.ok) return { ok: false as const, erro: r.motivo };
 
-  const { dados } = r;
-  const preenchidos = Object.fromEntries(
-    Object.entries(dados).filter(([, v]) => v !== undefined && v !== null),
-  );
+  const preenchidos = soComValor(r.dados);
 
   if (Object.keys(preenchidos).length === 0) {
     return { ok: false as const, erro: "A API não devolveu nenhum número para este mês." };
@@ -189,6 +186,93 @@ export async function importarDaApi(id: string) {
     // continuaria mostrando o que havia antes da importação.
     dados: preenchidos as Partial<CamposRelatorio>,
     avisos: r.avisos,
+  };
+}
+
+function soComValor(dados: object) {
+  return Object.fromEntries(
+    Object.entries(dados).filter(([, v]) => v !== undefined && v !== null),
+  );
+}
+
+/**
+ * Cria, já importados, os relatórios dos meses anteriores do mesmo ano que
+ * ainda não existem — é o que monta o comparativo do ano sem digitar nada.
+ * A Meta guarda dois anos de métricas e de posts.
+ *
+ * Mês que já tem relatório não é tocado, e mês sem post nem visualização
+ * (a conta ainda não existia, por exemplo) não vira relatório vazio.
+ */
+export async function importarMesesAnteriores(id: string) {
+  const user = await requireUser();
+
+  const alvo = await db.relatorioMensal.findUnique({
+    where: { id },
+    select: { projectId: true, ano: true, mes: true, cliente: true },
+  });
+  if (!alvo) return { ok: false as const, erro: "Relatório não encontrado." };
+  await assertProjectAccess(user, alvo.projectId, true);
+
+  const [conta, existentes] = await Promise.all([
+    db.instagramAccount.findUnique({
+      where: { projectId: alvo.projectId },
+      select: { igUserId: true, accessToken: true },
+    }),
+    db.relatorioMensal.findMany({
+      where: { projectId: alvo.projectId, ano: alvo.ano },
+      select: { mes: true },
+    }),
+  ]);
+  const ocupados = new Set(existentes.map((e) => e.mes));
+  const faltando = Array.from({ length: alvo.mes - 1 }, (_, i) => i + 1).filter(
+    (m) => !ocupados.has(m),
+  );
+  if (!faltando.length) {
+    return { ok: true as const, criados: [] as number[], vazios: [] as number[], falhas: [] as string[] };
+  }
+
+  const criados: number[] = [];
+  const vazios: number[] = [];
+  const falhas: string[] = [];
+
+  // Três meses por vez: rápido o bastante sem esbarrar no limite da Meta.
+  for (let i = 0; i < faltando.length; i += 3) {
+    await Promise.all(
+      faltando.slice(i, i + 3).map(async (mes) => {
+        const r = await importarMes(alvo.projectId, conta, alvo.ano, mes, false);
+        if (!r.ok) {
+          falhas.push(`${mes}: ${r.motivo}`);
+          return;
+        }
+        if (!r.dados.posts && !r.dados.visualizacoes) {
+          vazios.push(mes);
+          return;
+        }
+        try {
+          await db.relatorioMensal.create({
+            data: {
+              projectId: alvo.projectId,
+              ano: alvo.ano,
+              mes,
+              cliente: alvo.cliente,
+              ...soComValor(r.dados),
+              fonte: "api",
+            },
+          });
+          criados.push(mes);
+        } catch {
+          // Criado em paralelo (clique duplo): o que já existe fica.
+        }
+      }),
+    );
+  }
+
+  refreshAll();
+  return {
+    ok: true as const,
+    criados: criados.sort((a, b) => a - b),
+    vazios: vazios.sort((a, b) => a - b),
+    falhas,
   };
 }
 

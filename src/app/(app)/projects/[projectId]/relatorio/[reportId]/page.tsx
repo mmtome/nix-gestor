@@ -6,6 +6,9 @@ import { comoDestaques, comoFatias, comoHorarios } from "@/lib/relatorio";
 import { RelatorioView } from "@/components/relatorio/RelatorioView";
 import type { EstadoRelatorio } from "@/components/relatorio/Editor";
 
+// "Meses anteriores" importa vários meses numa ação só.
+export const maxDuration = 300;
+
 export default async function RelatorioPage({
   params,
 }: {
