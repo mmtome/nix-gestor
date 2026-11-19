@@ -181,9 +181,9 @@ export function ContaInstagram({
       )}
 
       <p className="mt-3 text-[11px] leading-relaxed text-faint">
-        Abre o login da Meta: entre com o Instagram do cliente (ou com o Facebook de quem
-        acessa o portfólio dele), escolha o portfólio e a conta e permita. A conta precisa ser
-        profissional e, enquanto o app estiver em desenvolvimento, testadora do app NIX Gestor.
+        {conectada
+          ? "Conectada uma vez, a conta serve a toda a equipe: qualquer pessoa do projeto gera os relatórios sem passar pela Meta."
+          : "Quem conecta é quem administra o app NIX Gestor na Meta: “Continuar com o Facebook”, escolher o portfólio do cliente e marcar só a conta dele. Precisa de controle total desse portfólio."}
       </p>
     </div>
   );
