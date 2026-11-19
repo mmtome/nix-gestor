@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<title>Conectar a API do Instagram · NIX Gestor</title>
+<title>Conectar um Instagram · NIX Gestor</title>
 <style>
   @font-face { font-family: Poppins; font-weight: 400; src: url(fonts/Poppins-Regular.ttf); }
   @font-face { font-family: Poppins; font-weight: 500; src: url(fonts/Poppins-Medium.ttf); }
@@ -169,291 +169,256 @@
       <circle cx="400" cy="406.4" r="82.92" fill="#fff"/>
       <circle cx="728.44" cy="144.92" r="144.96" fill="url(#gL)"/>
     </svg>
-    <h1>Conectar a API do<br>Instagram ao<br><em>Gestor</em></h1>
+    <h1>Conectar um<br>Instagram ao<br><em>Gestor</em></h1>
     <div class="traco"></div>
-    <p class="sub-capa">Tudo o que gerar na Meta, uma vez só, para o relatório do gestor puxar o máximo sozinho: conteúdo, audiência, stories e Direct.</p>
+    <p class="sub-capa">Para quem da NIX vai ligar a conta de um cliente ao app NIX Gestor e gerar o relatório do mês no modelo da agência, já com os números da Meta.</p>
     <div class="meta">
-      <div><div class="k">Parte 1</div><div class="v">Na Meta · uma vez só</div></div>
-      <div><div class="k">Parte 2</div><div class="v">No Instagram · por cliente</div></div>
-      <div><div class="k">Parte 3</div><div class="v">No Gestor · por cliente</div></div>
-      <div><div class="k">Tempo</div><div class="v">~30 minutos</div></div>
+      <div><div class="k">Parte 1</div><div class="v">Você · uma vez só</div></div>
+      <div><div class="k">Parte 2</div><div class="v">Cliente · uma vez por conta</div></div>
+      <div><div class="k">Parte 3</div><div class="v">Gestor · todo mês</div></div>
+      <div><div class="k">Tempo</div><div class="v">~15 min por conta</div></div>
     </div>
   </div>
-  <div class="versao">Versão 3 · novembro de 2026</div>
+  <div class="versao">Versão 4 · novembro de 2026</div>
 </section>
 
-<!-- ============================== 2 · ANTES DE COMEÇAR ============================== -->
+<!-- ============================== 2 · ANTES ============================== -->
 <section class="page">
-  <div class="cab"><div class="marca"><svg><use href="#nix"/></svg>NIX Gestor</div><div class="rotulo">Conectar a API</div></div>
-  <div class="parte"><span class="tag">ANTES</span><h2>O que você precisa ter em mãos</h2></div>
+  <div class="cab"><div class="marca"><svg><use href="#nix"/></svg>NIX Gestor</div><div class="rotulo">Conectar uma conta</div></div>
+  <div class="parte"><span class="tag">ANTES</span><h2>O que precisa estar pronto</h2></div>
 
-  <div class="sub" style="margin-top:3mm">Da NIX · uma vez só</div>
+  <div class="sub" style="margin-top:3mm">De quem vai conectar · uma vez só</div>
   <table class="acessos">
-    <tr><td class="i"><span>1</span></td><td class="o"><b>Conta pessoal do Facebook</b><small>de quem vai administrar o app</small></td>
-        <td class="d">É só a identidade de desenvolvedor, não precisa ser da empresa. Cadastre-a em <b>developers.facebook.com</b> → <b>Começar</b>, confirmando telefone e e-mail.</td><td class="p">passos 1–7</td></tr>
-    <tr><td class="i"><span>2</span></td><td class="o"><b>Portfólio empresarial da NIX</b><small>business.facebook.com · obrigatório</small></td>
-        <td class="d">O login unificado só existe com o app dentro de um portfólio. Conectar não pede verificação: ela só entra no passo 7, se for preciso, e aí pede CNPJ, endereço, telefone, um documento e o site.</td><td class="p">passos 1, 2 e 7</td></tr>
-    <tr><td class="i"><span>3</span></td><td class="o"><b>Vercel, projeto nix-gestor</b><small>permissão para editar as variáveis</small></td>
-        <td class="d">Para cadastrar o ID, a chave secreta e a configuração do app, e a senha do webhook.</td><td class="p">passos 5 e 6</td></tr>
-    <tr><td class="i"><span>4</span></td><td class="o"><b>Gestor, login de administrador</b><small>nix-gestor.vercel.app</small></td>
-        <td class="d">Para conectar as contas e gerar os relatórios.</td><td class="p">passos 11–13</td></tr>
-    <tr><td class="i"><span>5</span></td><td class="o"><b>Instagram da @agencianix</b><small>usuário, senha e código de duas etapas</small></td>
-        <td class="d">É a primeira conta a conectar: funciona sem revisão da Meta e valida o fluxo inteiro.</td><td class="p">passos 8–11</td></tr>
+    <tr><td class="i"><span>1</span></td><td class="o"><b>Conta pessoal do Facebook</b><small>a sua, cadastrada como desenvolvedor</small></td>
+        <td class="d">Cadastre em <b>developers.facebook.com</b> → <b>Começar</b>, confirmando telefone e e-mail. É com ela que você entra na tela da Meta.</td><td class="p">passos 1, 2, 7</td></tr>
+    <tr><td class="i"><span>2</span></td><td class="o"><b>Função no app NIX Gestor</b><small>o Matheus adiciona</small></td>
+        <td class="d">O app é do Facebook do Matheus. Enquanto ele estiver em modo de desenvolvimento, só conecta conta quem tem função nele.</td><td class="p">passos 1–2</td></tr>
+    <tr><td class="i"><span>3</span></td><td class="o"><b>Login no gestor</b><small>nix-gestor.vercel.app</small></td>
+        <td class="d">Peça ao Matheus. É onde se conecta a conta e se gera o relatório.</td><td class="p">passos 7–9</td></tr>
   </table>
 
-  <div class="sub">De cada conta de cliente · quem faz é a equipe da NIX</div>
+  <div class="sub">De cada conta de cliente · uma vez por conta</div>
   <table class="acessos cliente">
-    <tr><td class="i"><span>6</span></td><td class="o"><b>Login do Instagram do cliente</b><small>usuário, senha e código de duas etapas, o mesmo que a NIX usa para postar</small></td>
-        <td class="d">Ou o Facebook de alguém com acesso ao portfólio do cliente. Ser só colaborador da conta não serve. Se o código de duas etapas chega no celular do cliente, combine o horário.</td><td class="p">passo 11</td></tr>
-    <tr><td class="i"><span>7</span></td><td class="o"><b>Conta profissional, pública e num portfólio</b><small>Empresa ou Criador de conteúdo</small></td>
-        <td class="d">Conta pessoal ou privada não aparece. No login, a Meta pede o portfólio empresarial dono da conta; quem anuncia pelo Business Suite já tem.</td><td class="p">passo 8</td></tr>
-    <tr><td class="i"><span>8</span></td><td class="o"><b>Acesso às mensagens liberado</b><small>no app do Instagram do cliente</small></td>
-        <td class="d">Sem isso a conta conecta, mas o Direct não chega ao gestor.</td><td class="p">passo 9</td></tr>
-    <tr><td class="i"><span>9</span></td><td class="o"><b>Conta adicionada como testadora</b><small>uma vez por conta</small></td>
-        <td class="d">A NIX adiciona no app e aceita o convite logada no Instagram do cliente. É o que deixa o app ler a conta sem a aprovação da Meta.</td><td class="p">passo 10</td></tr>
+    <tr><td class="i"><span>4</span></td><td class="o"><b>Instagram profissional e público</b><small>Empresa ou Criador de conteúdo</small></td>
+        <td class="d">Conta pessoal ou privada não aparece para a Meta.</td><td class="p">passo 3</td></tr>
+    <tr><td class="i"><span>5</span></td><td class="o"><b>Instagram dentro de um portfólio empresarial</b><small>business.facebook.com</small></td>
+        <td class="d">Quem anuncia pelo Meta Business Suite já tem. Na tela da Meta, você escolhe esse portfólio.</td><td class="p">passo 4</td></tr>
+    <tr><td class="i"><span>6</span></td><td class="o"><b>Controle total desse portfólio para você</b><small>quem convida é o administrador do cliente</small></td>
+        <td class="d">Sem controle total, a Meta trava a conexão. No Festival Oktoberaba, a Yasmim Leal convidou o Matheus para a EXP Produções.</td><td class="p">passo 5</td></tr>
+    <tr><td class="i"><span>7</span></td><td class="o"><b>Acesso às mensagens liberado</b><small>no app do Instagram do cliente</small></td>
+        <td class="d">Só para o Direct, quando ele chegar ao gestor. Já pode deixar ligado.</td><td class="p">passo 6</td></tr>
   </table>
 
   <div class="sub">Não precisa</div>
   <div class="nao">
-    <div><b>Página do Facebook</b>Nem vinculada ao Instagram, nem da NIX, nem do cliente. O login unificado dispensa.</div>
-    <div><b>Cliente no gestor</b>O gestor é só da equipe da NIX. O cliente não recebe acesso: recebe o PDF.</div>
-    <div><b>Cartão de crédito</b>A API da Meta é gratuita, e o gestor já está no ar.</div>
+    <div><b>Senha do Instagram do cliente</b>Você entra com o seu Facebook. Quem dá o acesso é o controle total do portfólio.</div>
+    <div><b>Página do Facebook</b>Nem vinculada ao Instagram. O login unificado da Meta dispensa.</div>
+    <div><b>Cliente no gestor</b>O gestor é só da equipe da NIX. O cliente recebe o PDF.</div>
   </div>
 
-  <div class="caixa" style="margin-top:3mm"><b>Se o passo 7 for necessário, confira o site antes.</b> Em 19/11/2026 o agencianix.com.br estava fora do ar (o endereço nem é encontrado), e a verificação da empresa na Meta pede um site funcionando.</div>
+  <div class="caixa roxa" style="margin-top:4mm"><b>Por que função no app e controle total?</b> Com o app em modo de desenvolvimento, a Meta só deixa conectar quem tem as duas coisas. Faltando uma, a tela da Meta trava em “Não foi possível conectar com NIX Gestor”.</div>
 
-  <div class="rod"><div class="marca"><svg><use href="#nix"/></svg>Agência NIX · Conectar a API do Instagram ao Gestor</div><div class="rotulo">Antes de começar</div></div>
+  <div class="rod"><div class="marca"><svg><use href="#nix"/></svg>Agência NIX · Conectar um Instagram ao Gestor</div><div class="rotulo">Antes de começar</div></div>
 </section>
 
-<!-- ============================== 3 · PARTE 1 (1–2) ============================== -->
+<!-- ============================== 3 · PARTE 1 + passo 3 ============================== -->
 <section class="page">
-  <div class="cab"><div class="marca"><svg><use href="#nix"/></svg>NIX Gestor</div><div class="rotulo">Conectar a API</div></div>
-
-  <div class="parte"><span class="tag">PARTE 1</span><h2>Na Meta</h2><span class="nota">uma vez só</span></div>
+  <div class="cab"><div class="marca"><svg><use href="#nix"/></svg>NIX Gestor</div><div class="rotulo">Conectar uma conta</div></div>
 
   <div class="resumo">
-    <div class="it"><div class="n">VOCÊ SAI COM</div><div class="t">Um app só, da NIX</div><div class="d">Todas as contas de cliente se conectam nele.</div></div>
-    <div class="it"><div class="n">VOCÊ SAI COM</div><div class="t">Uma configuração de login</div><div class="d">Seis permissões e um token que não vence.</div></div>
-    <div class="it"><div class="n">VOCÊ SAI COM</div><div class="t">Webhook ligado</div><div class="d">A Meta avisa o gestor de cada mensagem do Direct.</div></div>
-  </div>
-  <div class="legenda">
-    <span><span class="estado ja">Faça já</span> funciona hoje</span>
-    <span><span class="estado espera">Espere o aviso</span> depende da atualização do gestor</span>
+    <div class="it"><div class="n">VOCÊ, UMA VEZ</div><div class="t">Função no app</div><div class="d">O Matheus adiciona, você aceita.</div></div>
+    <div class="it"><div class="n">CADA CLIENTE, UMA VEZ</div><div class="t">Controle total do portfólio</div><div class="d">O administrador do cliente convida, você aceita e conecta.</div></div>
+    <div class="it"><div class="n">TODO MÊS</div><div class="t">Gerar relatório</div><div class="d">Um clique: abre no modelo da agência, já preenchido.</div></div>
   </div>
 
+  <div class="parte"><span class="tag">PARTE 1</span><h2>Você</h2><span class="nota">uma vez só</span></div>
+
   <div class="passo"><div class="num">1</div><div>
-    <h3>Crie o app <span class="estado ja">Faça já</span></h3>
-    <p>Em <b>developers.facebook.com/apps</b> → <b>Criar app</b>. São cinco telas:</p>
-    <ul class="lista">
-      <li><b>Detalhes do app:</b> nome <b>NIX Gestor</b> e o e-mail da agência.</li>
-      <li><b>Casos de uso:</b> no filtro da esquerda, clique em <b>Tudo</b> e marque <b>Gerenciar mensagens e conteúdo no Instagram</b>. Ele não aparece em "Em destaque".</li>
-      <li><b>Empresa:</b> escolha o portfólio empresarial da NIX. Se pular, a Meta pede de novo no passo 2.</li>
-      <li><b>Requisitos:</b> é só leitura. <b>Avançar</b>.</li>
-      <li><b>Visão geral:</b> confira e clique em <b>Criar aplicativo</b>. A Meta pode pedir a senha do Facebook.</li>
-    </ul>
-    <div class="caixa"><b>Um app só, com o nome da agência.</b> Todas as contas de cliente se conectam a ele, e o nome aparece na tela de login de cada uma. Para trocar depois: <b>Configurações do app → Básico</b>.</div>
+    <h3>Peça uma função no app NIX Gestor</h3>
+    <p>Quem adiciona é o <b>Matheus</b>, administrador do app. Mande para ele o nome ou o e-mail da sua conta do Facebook. Ele abre:</p>
+    <div class="caminho">developers.facebook.com/apps → NIX Gestor → Funções do app → Funções → <b>Adicionar pessoas</b></div>
+    <p>escolhe <b>Testador</b>, digita o seu nome ou e-mail e clica em <b>Adicionar</b>. Testador basta: conecta contas, mas não muda nada na configuração do app.</p>
+    <div class="caixa">A sua conta precisa estar cadastrada antes em <b>developers.facebook.com</b> → <b>Começar</b>. Sem isso, a Meta não deixa adicioná-la.</div>
   </div></div>
 
   <div class="passo"><div class="num">2</div><div>
-    <h3>Abra o login unificado <span class="estado ja">Faça já</span></h3>
-    <p>No painel do app:</p>
-    <div class="caminho">Casos de uso → Gerenciar mensagens e conteúdo no Instagram → Personalizar → <b>API setup with Unified login</b></div>
-    <p>Se aparecer o aviso de que o portfólio é obrigatório, clique em <b>+ Portfólio empresarial</b> e escolha o da NIX. Conectar não pede verificação da empresa.</p>
-    <div class="caixa roxa">Para apps novos, a Meta não oferece mais o login do Instagram: o aviso aparece no topo da página. Também não use <b>Configuração da API com login do Facebook</b>, que está obsoleta e exige Página vinculada.</div>
+    <h3>Aceite o convite</h3>
+    <p>Logado no seu Facebook, abra <b>developers.facebook.com/requests</b> (ou o sino de notificações em developers.facebook.com) e clique em <b>Confirmar</b>. Daqui em diante, você conecta qualquer cliente que lhe der controle total.</p>
   </div></div>
 
-  <div class="rod"><div class="marca"><svg><use href="#nix"/></svg>Agência NIX · Conectar a API do Instagram ao Gestor</div><div class="rotulo">Parte 1 de 3</div></div>
-</section>
-
-<!-- ============================== 4 · PARTE 1 (3–5) ============================== -->
-<section class="page">
-  <div class="cab"><div class="marca"><svg><use href="#nix"/></svg>NIX Gestor</div><div class="rotulo">Conectar a API</div></div>
-  <div class="parte"><span class="tag">PARTE 1</span><h2>Na Meta</h2><span class="nota">continuação</span></div>
+  <div class="parte" style="border-top:1px solid var(--linha)"><span class="tag">PARTE 2</span><h2>Na conta do cliente</h2><span class="nota">uma vez por conta</span></div>
 
   <div class="passo"><div class="num">3</div><div>
-    <h3>Crie a configuração de login <span class="estado ja">Faça já</span></h3>
-    <p>Seção <b>1. Configure seu app</b> → <b>Criar nova configuração</b> → <b>Criar do modelo</b>. Depois, em <b>Editar permissões</b>, deixe exatamente estas seis:</p>
-    <table class="perm">
-      <tr><td><code>instagram_basic</code></td><td>Perfil, seguidores e a lista de posts</td></tr>
-      <tr><td><code>instagram_manage_insights</code></td><td>Alcance, visualizações, demografia, horários e stories. <b>Não vem no modelo: marque.</b></td></tr>
-      <tr><td><code>instagram_manage_messages</code></td><td>Direct: conversas, mensagens recebidas e reações</td></tr>
-      <tr><td><code>instagram_manage_comments</code></td><td>Comentários e menções</td></tr>
-      <tr><td><code>instagram_content_publish</code></td><td>Publicação automática a partir do gestor</td></tr>
-      <tr><td><code>ads_read</code></td><td>Números de anúncios, para um slide futuro</td></tr>
-    </table>
-    <p>Desmarque <code>ads_management</code>: o gestor não cria anúncios. Na prévia, confira <b>Token de acesso do usuário do sistema</b> com expiração <b>Nunca</b>, e anote a <b>Identificação da configuração</b>.</p>
-    <div class="caixa"><b>Confira antes de conectar a primeira conta.</b> Permissão acrescentada depois obriga a reconectar todas as contas.</div>
+    <h3>Conta profissional e pública</h3>
+    <p>No app do Instagram: <b>Configurações e atividade → Tipo de conta e ferramentas → Mudar para conta profissional</b> (Empresa ou Criador). A conta também precisa estar pública. Se já for, pule.</p>
   </div></div>
 
   <div class="passo"><div class="num">4</div><div>
-    <h3>Cadastre o endereço de retorno <span class="estado ja">Faça já</span></h3>
-    <p>Na mesma seção, em <b>URL de redirecionamento</b>, cole o endereço e clique em <b>Salvar</b>. A <b>URL de login</b> aparece embaixo; não precisa copiar, o gestor monta a dele.</p>
-    <div class="ficha"><div class="l"><span class="k">Endereço</span><span class="v">https://nix-gestor.vercel.app/api/instagram/callback</span></div></div>
+    <h3>Descubra o portfólio dono do Instagram</h3>
+    <p>Pergunte ao cliente em qual portfólio empresarial está o Instagram. Quem anuncia pelo Meta Business Suite já tem um, e nem sempre tem o nome do cliente: o do Festival Oktoberaba é o da produtora, <b>EXP Produções</b>.</p>
+    <p>Se não houver nenhum, o cliente cria em <b>business.facebook.com</b> e adiciona o Instagram em <b>Configurações → Contas → Contas do Instagram</b>.</p>
   </div></div>
+
+  <div class="rod"><div class="marca"><svg><use href="#nix"/></svg>Agência NIX · Conectar um Instagram ao Gestor</div><div class="rotulo">Partes 1 e 2</div></div>
+</section>
+
+<!-- ============================== 4 · PARTE 2 (4–6) ============================== -->
+<section class="page">
+  <div class="cab"><div class="marca"><svg><use href="#nix"/></svg>NIX Gestor</div><div class="rotulo">Conectar uma conta</div></div>
+  <div class="parte"><span class="tag">PARTE 2</span><h2>Na conta do cliente</h2><span class="nota">continuação</span></div>
 
   <div class="passo"><div class="num">5</div><div>
-    <h3>Guarde o ID, a chave e a configuração na Vercel <span class="estado ja">Faça já</span></h3>
-    <p>Em <b>Configurações do app</b> (engrenagem no menu da esquerda) → <b>Básico</b>, copie o <b>ID do app</b> e a <b>Chave secreta do app</b> (clique em <b>Mostrar</b>). Cadastre em <b>vercel.com</b> → <b>nix-gestor</b> → <b>Settings</b> → <b>Environment Variables</b>:</p>
-    <div class="ficha">
-      <div class="l"><span class="k">ID do app</span><span class="v">INSTAGRAM_APP_ID</span></div>
-      <div class="l"><span class="k">Chave secreta</span><span class="v">INSTAGRAM_APP_SECRET</span></div>
-      <div class="l"><span class="k">Passo 3</span><span class="v">INSTAGRAM_CONFIG_ID</span></div>
-    </div>
-    <div class="caixa">A chave secreta é a senha do app: não mande por WhatsApp nem cole em documento.</div>
+    <h3>Receba controle total desse portfólio</h3>
+    <p>Quem já administra o portfólio do cliente abre:</p>
+    <div class="caminho">business.facebook.com → Configurações → Usuários → Pessoas → <b>Adicionar pessoas</b></div>
+    <p>coloca o <b>seu e-mail</b>, marca <b>Controle total</b> e envia. Chega um e-mail “Você recebeu um convite para participar de [portfólio]”: clique em <b>Faça login para ver o convite</b>, entre com o seu Facebook e aceite.</p>
+    <div class="caixa"><b>Confira o nível antes de aceitar.</b> Se vier “Acesso parcial” ou “Acesso básico”, aceite assim mesmo e peça para mudar para Controle total em <b>Pessoas → seu nome</b>.</div>
   </div></div>
-
-  <div class="rod"><div class="marca"><svg><use href="#nix"/></svg>Agência NIX · Conectar a API do Instagram ao Gestor</div><div class="rotulo">Parte 1 de 3</div></div>
-</section>
-
-<!-- ============================== 5 · PARTE 1 (6–7) ============================== -->
-<section class="page">
-  <div class="cab"><div class="marca"><svg><use href="#nix"/></svg>NIX Gestor</div><div class="rotulo">Conectar a API</div></div>
-  <div class="parte"><span class="tag">PARTE 1</span><h2>Na Meta</h2><span class="nota">continuação</span></div>
 
   <div class="passo"><div class="num">6</div><div>
-    <h3>Ligue o webhook do Direct <span class="estado espera">Espere o aviso</span></h3>
-    <p>Primeiro, na Vercel, crie mais uma variável com qualquer sequência sem espaço (ex.: <span class="mono">nix-webhook-7k2p</span>). É só uma senha de aperto de mão, e o valor tem que ser o mesmo nos dois lugares:</p>
-    <div class="ficha"><div class="l"><span class="k">Nome</span><span class="v">INSTAGRAM_WEBHOOK_VERIFY_TOKEN</span></div></div>
-    <p>Depois, na página do login unificado, seção <b>3. Configurar webhooks</b>:</p>
-    <div class="ficha">
-      <div class="l"><span class="k">URL de callback</span><span class="v">https://nix-gestor.vercel.app/api/instagram/webhook</span></div>
-      <div class="l"><span class="k">Verificação</span><span class="v">o mesmo valor da variável acima</span></div>
-    </div>
-    <p>Verifique, salve e assine os campos <code>messages</code>, <code>message_echoes</code>, <code>message_reactions</code>, <code>messaging_seen</code> e <code>comments</code>. Se aparecer <code>story_insights</code>, marque também: são os números de cada story quando ele sai do ar.</p>
-    <div class="caixa"><b>Faça este passo só depois do aviso.</b> A Meta testa o endereço na hora de salvar, e ele entra no ar com a atualização do gestor. O Direct conta a partir daqui: o que chegou antes não volta pela API.</div>
+    <h3>Libere o acesso às mensagens <span class="estado talvez">Para o Direct</span></h3>
+    <div class="caminho">Configurações → Mensagens e respostas aos stories → Controles de mensagens → Ferramentas conectadas → <b>Permitir acesso às mensagens</b></div>
+    <p>No app do Instagram do cliente. Ainda não muda o relatório: deixa a conta pronta para quando o Direct chegar ao gestor.</p>
   </div></div>
 
-  <div class="passo"><div class="num">7</div><div>
-    <h3>Aprovação da Meta <span class="estado talvez">Só se precisar</span></h3>
-    <p>O cliente nunca entra no gestor. Esta aprovação é uma regra da Meta para o <b>app da NIX</b> poder ler contas que não têm função nele. Com cada conta de cliente adicionada como testadora (passo 10), os números do relatório já vêm sem ela.</p>
-    <p>Ela só pode ser necessária para o <b>Direct</b>: a Meta diz que os avisos de mensagens exigem o app publicado. O teste com a @agencianix tira a dúvida. Se o Direct não chegar, aí sim:</p>
-    <ul class="lista">
-      <li><b>Verifique a empresa:</b> conclua a verificação do portfólio da NIX, o mesmo do passo 2, em <b>business.facebook.com</b>, com o CNPJ.</li>
-      <li><b>Complete o cadastro</b> em <b>Configurações do app → Básico</b>: ícone, categoria, e-mail, a política de privacidade em <span class="mono" style="color:var(--roxo)">nix-gestor.vercel.app/privacidade</span> e a exclusão de dados em <span class="mono" style="color:var(--roxo)">nix-gestor.vercel.app/api/instagram/exclusao</span>.</li>
-      <li><b>Peça a revisão</b> na seção <b>4. Conclua a análise do app</b>, com uma descrição do uso e um vídeo de tela de cada permissão funcionando.</li>
-    </ul>
-    <div class="caixa roxa"><b>Comece pela @agencianix.</b> Ela é sua, funciona na hora e valida o fluxo inteiro no mesmo dia, inclusive se o Direct chega sem a aprovação.</div>
-  </div></div>
-
-  <div class="rod"><div class="marca"><svg><use href="#nix"/></svg>Agência NIX · Conectar a API do Instagram ao Gestor</div><div class="rotulo">Parte 1 de 3</div></div>
+  <div class="rod"><div class="marca"><svg><use href="#nix"/></svg>Agência NIX · Conectar um Instagram ao Gestor</div><div class="rotulo">Parte 2</div></div>
 </section>
 
-<!-- ============================== 5 · PARTES 2 E 3 ============================== -->
+<!-- ============================== 5 · PARTE 3 ============================== -->
 <section class="page">
-  <div class="cab"><div class="marca"><svg><use href="#nix"/></svg>NIX Gestor</div><div class="rotulo">Conectar a API</div></div>
-  <div class="parte"><span class="tag">PARTE 2</span><h2>No Instagram</h2><span class="nota">por cliente · antes do passo 11</span></div>
+  <div class="cab"><div class="marca"><svg><use href="#nix"/></svg>NIX Gestor</div><div class="rotulo">Conectar uma conta</div></div>
+  <div class="parte"><span class="tag">PARTE 3</span><h2>No Gestor</h2><span class="nota">conectar uma vez · gerar todo mês</span></div>
+
+  <div class="passo"><div class="num">7</div><div>
+    <h3>Conecte a conta</h3>
+    <div class="caminho">Projeto do cliente → <b>Relatório</b> → cartão Conta do Instagram → <b>Conectar com Instagram</b></div>
+    <p>Na tela da Meta:</p>
+    <ul class="lista">
+      <li><b>Continuar com o Facebook</b>, com a sua conta, a que tem função no app.</li>
+      <li><b>Portfólio empresarial:</b> o do cliente. <b>Conta do Instagram:</b> marque só a dele. <b>Conta de anúncios:</b> deixe em branco.</li>
+      <li><b>Avançar</b>, deixe todas as permissões e conclua. Aparece “A empresa … foi conectada ao NIX Gestor”: clique em <b>Concluir</b>.</li>
+    </ul>
+    <p>De volta ao gestor, o cartão mostra <b>Conectado como @conta</b>. A conexão não vence: é uma vez por conta.</p>
+  </div></div>
 
   <div class="passo"><div class="num">8</div><div>
-    <h3>Conta profissional, pública e num portfólio</h3>
-    <p>No app do Instagram: <b>Configurações e atividade → Tipo de conta e ferramentas → Mudar para conta profissional</b> (Empresa ou Criador). A conta precisa estar pública e dentro de um <b>portfólio empresarial</b>, que a Meta pede no passo 11. Quem anuncia pelo Business Suite já tem.</p>
-  </div></div>
-
-  <div class="passo"><div class="num">9</div><div>
-    <h3>Libere o acesso às mensagens</h3>
-    <div class="caminho">Configurações → Mensagens e respostas aos stories → Controles de mensagens → Ferramentas conectadas → <b>Permitir acesso às mensagens</b></div>
-    <p>Deixe ligado. Sem isso, a conta aparece como conectada, mas o Direct não chega ao gestor.</p>
-  </div></div>
-
-  <div class="passo"><div class="num">10</div><div>
-    <h3>Adicione a conta como testadora do app</h3>
-    <p>Em <b>Funções do app → Funções → Testadores do Instagram</b>, adicione o @ da conta. Depois, logado no Instagram do cliente pelo navegador, aceite em <b>instagram.com/accounts/manage_access</b> → <b>Convites de testador</b>. É uma vez por conta.</p>
-  </div></div>
-
-  <div class="parte" style="border-top:1px solid var(--linha)"><span class="tag">PARTE 3</span><h2>No Gestor</h2><span class="nota">por cliente</span></div>
-
-  <div class="passo"><div class="num">11</div><div>
-    <h3>Conecte a conta <span class="estado espera">Espere o aviso</span></h3>
-    <div class="caminho">Projeto do cliente → <b>Relatório</b> → cartão <b>Conta do Instagram</b> → <b>Conectar com Instagram</b></div>
-    <p>Entre com o Instagram do cliente (ou o Facebook de quem acessa o portfólio dele), escolha o portfólio e a conta → <b>Permitir</b>. Aparece <b>Conectado como @conta</b>. O botão chega com a atualização.</p>
-  </div></div>
-
-  <div class="passo"><div class="num">12</div><div>
     <h3>Gere o relatório do mês</h3>
-    <p><b>Novo relatório</b> → mês → <b>Criar</b> → <b>Importar da API</b> → <b>Editar</b> só o que ficou em branco → <b>Salvar</b>. Reimportar é seguro: só é sobrescrito o campo que veio com valor.</p>
+    <p>No mesmo lugar, em <b>Novo relatório</b>, escolha o mês e clique em <b>Gerar relatório</b>. Ele abre no modelo da agência e se preenche sozinho em até um minuto:</p>
+    <ul class="lista">
+      <li>cria os meses anteriores do ano que faltam, para o slide de comparativos;</li>
+      <li>importa os números do mês, os destaques com imagem e a audiência;</li>
+      <li>escreve um rascunho da conclusão a partir dos números.</li>
+    </ul>
     <div class="caixa">Gere a partir do <b>dia 3</b> do mês seguinte: a Meta leva até 48 h para fechar os números.</div>
   </div></div>
 
-  <div class="passo"><div class="num">13</div><div>
-    <h3>Exporte o PDF</h3>
-    <p>Clique em <b>Apresentar</b> e depois em <b>Baixar PDF</b>. Na janela de impressão, marque <b>Gráficos de fundo</b>. Sem isso, os slides roxos saem brancos com texto branco.</p>
+  <div class="passo"><div class="num">9</div><div>
+    <h3>Revise e exporte</h3>
+    <p>Leia a lista de avisos abaixo da barra: ela diz o que veio e o que falta. Em <b>Editar</b>, complete o que é à mão (horários, stories, nota de audiência) e revise a conclusão com o contexto do mês. Depois, <b>Salvar</b> → <b>Baixar PDF</b> e, na impressão, marque <b>Gráficos de fundo</b>.</p>
   </div></div>
 
-  <div class="rod"><div class="marca"><svg><use href="#nix"/></svg>Agência NIX · Conectar a API do Instagram ao Gestor</div><div class="rotulo">Partes 2 e 3 de 3</div></div>
+  <div class="rod"><div class="marca"><svg><use href="#nix"/></svg>Agência NIX · Conectar um Instagram ao Gestor</div><div class="rotulo">Parte 3</div></div>
 </section>
 
-<!-- ============================== 6 · ANEXO A ============================== -->
+<!-- ============================== 6 · PROBLEMAS ============================== -->
+<section class="page">
+  <div class="cab"><div class="marca"><svg><use href="#nix"/></svg>NIX Gestor</div><div class="rotulo">Conectar uma conta</div></div>
+  <div class="parte"><span class="tag">PROBLEMAS</span><h2>Se algo travar</h2></div>
+
+  <div class="peg">
+    <h4>“Não foi possível conectar com NIX Gestor”</h4>
+    <p>A tela da Meta trava depois de escolher a conta. Falta controle total do portfólio do cliente (passo 5) ou função no app (passos 1 e 2). O gestor nem chega a ser chamado, então não há nada a corrigir nele.</p>
+    <h4>O portfólio do cliente não aparece na lista</h4>
+    <p>Você ainda não faz parte dele: o convite do passo 5 não foi enviado ou não foi aceito.</p>
+    <h4>A conta do Instagram não aparece</h4>
+    <p>Ela é pessoal (passo 3) ou está em outro portfólio. Troque o portfólio no primeiro campo da tela da Meta.</p>
+    <h4>Mais de uma conta marcada</h4>
+    <p>O gestor grava a primeira da lista e avisa quais ficaram de fora. Clique em <b>Reconectar</b> e marque só a do cliente.</p>
+    <h4>A conexão parou de funcionar</h4>
+    <p>Ela não vence, mas cai se alguém remover o NIX Gestor do portfólio do cliente (<b>Configurações → Integrações → Apps conectados</b>) ou se o Instagram mudar de portfólio. Basta conectar de novo.</p>
+    <h4>Números zerados ou estranhos</h4>
+    <p>Mês em curso ou fechado há menos de 48 h: gere a partir do dia 3. Importar de novo é seguro, e a conclusão que alguém escreveu nunca é sobrescrita.</p>
+  </div>
+
+  <div class="rod"><div class="marca"><svg><use href="#nix"/></svg>Agência NIX · Conectar um Instagram ao Gestor</div><div class="rotulo">Problemas</div></div>
+</section>
+
+<!-- ============================== 7 · ANEXO A ============================== -->
 <section class="page">
   <div class="cab"><div class="marca"><svg><use href="#nix"/></svg>NIX Gestor</div><div class="rotulo">Referência</div></div>
   <div class="parte"><span class="tag">ANEXO A</span><h2>O que o relatório puxa sozinho</h2></div>
 
   <div class="colunas">
-    <div class="c"><h4>Já está no relatório</h4><ul>
-      <li>Seguidores, alcance e visualizações</li>
-      <li>Posts, feeds e reels do mês</li>
-      <li>Curtidas, comentários, compartilhamentos, salvos e interações</li>
-      <li>Média de visualização dos reels</li>
-      <li>Idade, cidade e gênero do público<small>em contas com 100+ seguidores</small></li>
+    <div class="c"><h4>Vem da API</h4><ul>
+      <li>Visualizações e alcance do mês<small>os mesmos números do painel do Instagram</small></li>
+      <li>Seguidores no fim do mês, novos e perdidos</li>
+      <li>Engajamento, frequência e crescimento<small>calculados a partir dos números</small></li>
+      <li>Posts, reels e média de visualização dos reels</li>
+      <li>Interações, curtidas, comentários, compartilhamentos e salvos</li>
+      <li>Formato com mais interações por post</li>
+      <li>3 melhores e 2 piores posts, com imagem</li>
+      <li>Idade, cidade e gênero<small>em contas com 100+ seguidores</small></li>
+      <li>Comparativo do ano<small>os meses anteriores são criados sozinhos</small></li>
+      <li>Rascunho da conclusão</li>
     </ul></div>
-    <div class="c"><h4>Vem com a atualização</h4><ul>
-      <li>Os 3 melhores e os 2 piores posts, com a imagem</li>
-      <li>Comparativo do ano<small>a Meta guarda 2 anos: os meses anteriores vêm na hora</small></li>
-      <li>Seguidores ganhos e perdidos, contas engajadas e cliques no link do perfil</li>
-      <li>Frequência de exibição e taxa de engajamento, já calculadas</li>
-      <li>Tempo médio assistido dos reels</li>
-      <li>Curva de horários<small>últimos 30 dias; confirmada na primeira conexão</small></li>
-      <li>Stories<small>coletados de hora em hora enquanto estão no ar</small></li>
-      <li>Direct: volume por dia e hora, mapa da semana, recordes, tempo de resposta, conversas sem resposta, temas e emojis</li>
-      <li>Rascunho da conclusão a partir dos números</li>
+    <div class="c"><h4>Complete à mão</h4><ul>
+      <li>Horários<small>a Meta não devolveu dados para o Festival Oktoberaba</small></li>
+      <li>Stories<small>a Meta apaga os números deles em 24 h</small></li>
+      <li>Cliques no link da bio<small>confira: pode vir zerado</small></li>
+      <li>Nota de audiência</li>
+      <li>O contexto da conclusão<small>lançamentos, eventos e campanhas, que a API não conhece</small></li>
     </ul></div>
-    <div class="c"><h4>Não existe na API</h4><ul>
-      <li>Direct anterior à conexão<small>só pelo arquivo exportado do Instagram, enviado uma vez</small></li>
-      <li>Stories anteriores à conexão<small>a Meta apaga os números em 24 h</small></li>
-      <li>Demografia de conta com menos de 100 seguidores</li>
-      <li>A palavra final da conclusão<small>o rascunho vem pronto; a revisão é sua</small></li>
+    <div class="c"><h4>Ainda por vir</h4><ul>
+      <li>Direct: volume, horários, tempo de resposta e temas<small>depende do webhook (anexo B)</small></li>
+      <li>Stories coletados enquanto estão no ar</li>
+      <li>Direct anterior à conexão<small>só pelo arquivo exportado do Instagram</small></li>
     </ul></div>
   </div>
 
-  <div class="caixa roxa" style="margin-top:6mm"><b>Por que conectar cedo.</b> Tudo o que é número de conta e de post a Meta guarda por dois anos, então pode ser buscado a qualquer momento. Stories e Direct, não: eles só existem para o gestor a partir do dia em que a conta é conectada. Quanto antes cada cliente estiver ligado, mais completo fica o primeiro relatório.</div>
+  <div class="caixa roxa" style="margin-top:6mm"><b>Por que conectar cedo.</b> Números de conta e de posts a Meta guarda por dois anos, então podem ser buscados a qualquer momento. Stories e Direct, não: eles só vão existir para o gestor a partir do dia em que a conta estiver conectada.</div>
 
-  <div class="rod"><div class="marca"><svg><use href="#nix"/></svg>Agência NIX · Conectar a API do Instagram ao Gestor</div><div class="rotulo">Anexo A</div></div>
+  <div class="rod"><div class="marca"><svg><use href="#nix"/></svg>Agência NIX · Conectar um Instagram ao Gestor</div><div class="rotulo">Anexo A</div></div>
 </section>
 
-<!-- ============================== 7 · ANEXO B ============================== -->
+<!-- ============================== 8 · ANEXO B ============================== -->
 <section class="page">
   <div class="cab"><div class="marca"><svg><use href="#nix"/></svg>NIX Gestor</div><div class="rotulo">Referência</div></div>
-  <div class="parte"><span class="tag">ANEXO B</span><h2>Para copiar</h2></div>
+  <div class="parte"><span class="tag">ANEXO B</span><h2>Como o app foi configurado</h2><span class="nota">já feito em 19/11/2026</span></div>
 
-  <div class="sub">Variáveis na Vercel · nix-gestor → Settings → Environment Variables</div>
+  <p style="margin:3mm 0 0">Nada daqui precisa ser repetido para conectar um cliente. Serve para conferir ou para refazer o app do zero.</p>
+
+  <div class="sub" style="margin-top:4mm">O app na Meta</div>
   <div class="ficha">
-    <div class="l"><span class="k">Passo 5</span><span class="v">INSTAGRAM_APP_ID</span></div>
-    <div class="l"><span class="k">Passo 5</span><span class="v">INSTAGRAM_APP_SECRET</span></div>
-    <div class="l"><span class="k">Passo 5</span><span class="v">INSTAGRAM_CONFIG_ID</span></div>
-    <div class="l"><span class="k">Passo 6</span><span class="v">INSTAGRAM_WEBHOOK_VERIFY_TOKEN</span></div>
+    <div class="l"><span class="k">App</span><span class="v">NIX Gestor · ID 1670611327843349</span></div>
+    <div class="l"><span class="k">Dono</span><span class="v">Facebook do Matheus · portfólio Agência NIX</span></div>
+    <div class="l"><span class="k">Caso de uso</span><span class="v">Gerenciar mensagens e conteúdo no Instagram</span></div>
+    <div class="l"><span class="k">Configuração</span><span class="v">API setup with Unified login · 1480310807386558</span></div>
+    <div class="l"><span class="k">Retorno</span><span class="v">https://nix-gestor.vercel.app/api/instagram/callback</span></div>
   </div>
 
-  <div class="sub">Endereços no painel da Meta</div>
+  <div class="sub">Permissões da configuração · token de usuário do sistema, não expira</div>
+  <table class="perm">
+    <tr><td><code>instagram_basic</code></td><td>Perfil, seguidores e a lista de posts</td></tr>
+    <tr><td><code>instagram_manage_insights</code></td><td>Alcance, visualizações, demografia e stories</td></tr>
+    <tr><td><code>instagram_manage_messages</code></td><td>Direct</td></tr>
+    <tr><td><code>instagram_manage_comments</code></td><td>Comentários e menções</td></tr>
+    <tr><td><code>instagram_content_publish</code></td><td>Publicação a partir do gestor</td></tr>
+    <tr><td><code>ads_read</code></td><td>Números de anúncios, para um slide futuro</td></tr>
+  </table>
+
+  <div class="sub">Na Vercel · nix-gestor → Settings → Environment Variables</div>
   <div class="ficha">
-    <div class="l"><span class="k">Retorno · 4</span><span class="v">https://nix-gestor.vercel.app/api/instagram/callback</span></div>
-    <div class="l"><span class="k">Webhook · 6</span><span class="v">https://nix-gestor.vercel.app/api/instagram/webhook</span></div>
-    <div class="l"><span class="k">Privacidade · 7</span><span class="v">https://nix-gestor.vercel.app/privacidade</span></div>
-    <div class="l"><span class="k">Exclusão · 7</span><span class="v">https://nix-gestor.vercel.app/api/instagram/exclusao</span></div>
+    <div class="l"><span class="k">Já cadastradas</span><span class="v">INSTAGRAM_APP_ID · INSTAGRAM_APP_SECRET · INSTAGRAM_CONFIG_ID</span></div>
+    <div class="l"><span class="k">Com o webhook</span><span class="v">INSTAGRAM_WEBHOOK_VERIFY_TOKEN</span></div>
   </div>
 
-  <div class="sub">O que pode te pegar</div>
-  <div class="peg">
-    <h4>Configuração sem uma das permissões</h4>
-    <p>O gestor conecta, mas a parte correspondente volta vazia, e a mensagem da Meta diz qual permissão faltou. Acrescente-a em <b>Editar permissões</b> (passo 3) e conecte a conta de novo.</p>
-    <h4>Conexão que para de funcionar</h4>
-    <p>O token não vence, mas cai se o app for removido do portfólio do cliente ou se o Instagram mudar de portfólio. Basta conectar de novo. Se a conta nem aparece no login, ela é pessoal ou está em outro portfólio.</p>
-    <h4>Mensagens bloqueadas no Instagram do cliente</h4>
-    <p>Se o passo 9 ficar desligado, a conta aparece como conectada e o Direct fica zerado. É a primeira coisa a conferir quando o Direct não se mexe.</p>
-    <h4>Mês em curso ou recém-fechado</h4>
-    <p>Os números podem levar até 48 h para fechar. Um relatório gerado no dia 1 sai com o último dia incompleto.</p>
-  </div>
+  <div class="sub">Ainda pendente</div>
+  <ul class="lista">
+    <li><b>Webhook do Direct:</b> seção <b>3. Configurar webhooks</b> da configuração, com <span class="mono" style="color:var(--roxo)">nix-gestor.vercel.app/api/instagram/webhook</span>, quando o gestor avisar que o endereço está no ar.</li>
+    <li><b>Aprovação da Meta:</b> só se o Direct exigir o app publicado, ou para conectar contas sem dar função no app a cada pessoa. Pede verificação da empresa e o site da agência no ar.</li>
+  </ul>
 
-  <div class="caixa roxa" style="margin-top:3mm"><b>Sobre o Direct guardado.</b> O gestor classifica cada mensagem assim que ela chega (tema, emoji, se é pergunta) e guarda só a classificação e o horário, não o texto. O relatório sai completo sem o gestor virar um arquivo das conversas dos seguidores do cliente.</div>
-
-  <div class="rod"><div class="marca"><svg><use href="#nix"/></svg>Agência NIX · Conectar a API do Instagram ao Gestor</div><div class="rotulo">Anexo B</div></div>
+  <div class="rod"><div class="marca"><svg><use href="#nix"/></svg>Agência NIX · Conectar um Instagram ao Gestor</div><div class="rotulo">Anexo B</div></div>
 </section>
 
 </body>
