@@ -11,10 +11,13 @@ import { MESES } from "@/lib/relatorio";
 export function NovoRelatorio({
   projectId,
   ocupados,
+  contaConectada,
 }: {
   projectId: string;
   /** "ano-mes" dos relatórios que já existem, para não oferecer duplicata. */
   ocupados: string[];
+  /** Com conta conectada, o relatório já abre puxando tudo da API. */
+  contaConectada: boolean;
 }) {
   const router = useRouter();
   const hoje = new Date();
@@ -37,7 +40,8 @@ export function NovoRelatorio({
         setErro(r.erro ?? "Não foi possível criar.");
         return;
       }
-      router.push(`/projects/${projectId}/relatorio/${r.id}`);
+      const gerar = contaConectada && !r.jaExistia ? "?gerar=1" : "";
+      router.push(`/projects/${projectId}/relatorio/${r.id}${gerar}`);
     });
   }
 
@@ -45,7 +49,9 @@ export function NovoRelatorio({
     <div className="card p-5">
       <h2 className="text-[13px] font-semibold tracking-tight">Novo relatório</h2>
       <p className="mt-0.5 text-[11.5px] text-muted">
-        Um relatório por mês. Ele nasce vazio e você preenche ou importa da API.
+        {contaConectada
+          ? "Escolha o mês: o relatório abre no modelo da agência já com os números da Meta, os meses anteriores do ano para o comparativo e um rascunho da conclusão."
+          : "Um relatório por mês. Sem conta conectada, ele nasce vazio para preencher à mão."}
       </p>
 
       <div className="mt-4 flex flex-wrap items-end gap-2">
@@ -73,7 +79,7 @@ export function NovoRelatorio({
 
         <button onClick={criar} disabled={criando || jaExiste} className="btn-primary py-2">
           {criando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
-          Criar
+          {contaConectada ? "Gerar relatório" : "Criar"}
         </button>
       </div>
 

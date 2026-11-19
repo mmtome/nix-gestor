@@ -5,7 +5,8 @@ import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { assertProjectAccess } from "@/lib/permissions";
 import { refreshAll } from "@/lib/revalidate";
-import { importarMes } from "@/lib/insights";
+import { buscarMidias, importarMes } from "@/lib/insights";
+import { rascunhoDaConclusao } from "@/lib/conclusao";
 
 /* ============================================================================
    Relatório de resultados — criação, edição e importação.
@@ -154,7 +155,7 @@ export async function importarDaApi(id: string) {
 
   const alvo = await db.relatorioMensal.findUnique({
     where: { id },
-    select: { projectId: true, ano: true, mes: true },
+    select: { projectId: true, ano: true, mes: true, conclusao: true },
   });
   if (!alvo) return { ok: false as const, erro: "Relatório não encontrado." };
   await assertProjectAccess(user, alvo.projectId, true);
@@ -167,7 +168,21 @@ export async function importarDaApi(id: string) {
   const r = await importarMes(alvo.projectId, conta, alvo.ano, alvo.mes);
   if (!r.ok) return { ok: false as const, erro: r.motivo };
 
-  const preenchidos = soComValor(r.dados);
+  const preenchidos: Record<string, unknown> = soComValor(r.dados);
+
+  // Conclusão vazia ganha um rascunho; a que alguém escreveu fica como está.
+  if (!alvo.conclusao?.trim()) {
+    const ant = alvo.mes === 1 ? { ano: alvo.ano - 1, mes: 12 } : { ano: alvo.ano, mes: alvo.mes - 1 };
+    const anterior = await db.relatorioMensal.findUnique({
+      where: { projectId_ano_mes: { projectId: alvo.projectId, ...ant } },
+      select: { mes: true, visualizacoes: true, alcance: true },
+    });
+    const rascunho = rascunhoDaConclusao({ mes: alvo.mes, ...r.dados }, anterior);
+    if (rascunho) {
+      preenchidos.conclusao = rascunho;
+      r.avisos.push("Conclusão: rascunho escrito a partir dos números. Revise em Editar e acrescente o contexto do mês.");
+    }
+  }
 
   if (Object.keys(preenchidos).length === 0) {
     return { ok: false as const, erro: "A API não devolveu nenhum número para este mês." };
@@ -234,12 +249,14 @@ export async function importarMesesAnteriores(id: string) {
   const criados: number[] = [];
   const vazios: number[] = [];
   const falhas: string[] = [];
+  // Uma listagem de posts para todos os meses, em vez de uma por mês.
+  const midias = await buscarMidias(conta, alvo.ano, faltando[0], faltando.at(-1)!);
 
   // Três meses por vez: rápido o bastante sem esbarrar no limite da Meta.
   for (let i = 0; i < faltando.length; i += 3) {
     await Promise.all(
       faltando.slice(i, i + 3).map(async (mes) => {
-        const r = await importarMes(alvo.projectId, conta, alvo.ano, mes, false);
+        const r = await importarMes(alvo.projectId, conta, alvo.ano, mes, { completo: false, midias });
         if (!r.ok) {
           falhas.push(`${mes}: ${r.motivo}`);
           return;

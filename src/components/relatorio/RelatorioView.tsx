@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -38,6 +38,7 @@ export function RelatorioView({
   inicial,
   outrosMeses,
   contaConectada,
+  gerarAoAbrir = false,
 }: {
   id: string;
   projectId: string;
@@ -49,6 +50,8 @@ export function RelatorioView({
   /** Linhas dos demais meses do ano — este mês vem do estado local. */
   outrosMeses: LinhaComparativa[];
   contaConectada: boolean;
+  /** Veio do "Gerar relatório": puxa tudo da API assim que abre. */
+  gerarAoAbrir?: boolean;
 }) {
   const router = useRouter();
   const [estado, setEstado] = useState<EstadoRelatorio>(inicial);
@@ -60,6 +63,8 @@ export function RelatorioView({
   /** Os avisos da importação: o que a API não entregou e de onde veio cada número. */
   const [notas, setNotas] = useState<string[] | null>(null);
   const [buscandoMeses, setBuscandoMeses] = useState(false);
+  /** Etapa do "Gerar relatório" em andamento, mostrada no lugar do aviso. */
+  const [etapa, setEtapa] = useState<string | null>(null);
 
   const set = <K extends keyof EstadoRelatorio>(k: K, v: EstadoRelatorio[K]) => {
     setEstado((e) => ({ ...e, [k]: v }));
@@ -135,7 +140,10 @@ export function RelatorioView({
     });
   }
 
-  async function importar() {
+  /* As duas importações devolvem as notas em vez de só mostrá-las, para o
+     "Gerar relatório" juntar as duas numa lista. */
+
+  async function importar(sozinho = true): Promise<string[] | null> {
     setImportando(true);
     setAviso(null);
     const r = await importarDaApi(id);
@@ -143,15 +151,16 @@ export function RelatorioView({
 
     if (!r.ok) {
       setAviso({ tom: "erro", texto: r.erro ?? "Falha na importação." });
-      return;
+      return null;
     }
     setEstado((e) => ({ ...e, ...(r.dados as Partial<EstadoRelatorio>) }));
     setAviso({ tom: "ok", texto: `${r.campos} campos importados.` });
-    setNotas(r.avisos);
+    if (sozinho) setNotas(r.avisos);
     router.refresh();
+    return r.avisos;
   }
 
-  async function mesesAnteriores() {
+  async function mesesAnteriores(sozinho = true): Promise<string[] | null> {
     setBuscandoMeses(true);
     setAviso(null);
     const r = await importarMesesAnteriores(id);
@@ -159,7 +168,7 @@ export function RelatorioView({
 
     if (!r.ok) {
       setAviso({ tom: "erro", texto: r.erro ?? "Falha ao buscar os meses anteriores." });
-      return;
+      return null;
     }
     const nomes = (ms: number[]) => ms.map((m) => nomeDoMes(m).toLowerCase()).join(", ");
     setAviso({
@@ -168,14 +177,44 @@ export function RelatorioView({
         ? `${r.criados.length} meses criados para o comparativo.`
         : "Nenhum mês novo para criar.",
     });
-    setNotas([
-      ...(r.criados.length ? [`Criados e importados: ${nomes(r.criados)}.`] : []),
+    const lista = [
+      ...(r.criados.length
+        ? [`Comparativo: ${nomes(r.criados)} criados e importados (sem destaques nem demografia; abra o mês e use Importar da API para completar).`]
+        : []),
       ...(r.vazios.length ? [`Sem posts nem visualizações, não viraram relatório: ${nomes(r.vazios)}.`] : []),
-      ...r.falhas.map((f) => `Falhou ${f}`),
-      "Os meses criados não têm destaques nem demografia: abra cada um e use Importar da API se quiser o relatório completo.",
-    ]);
+      ...r.falhas.map((f) => `Falhou o mês ${f}`),
+    ];
+    if (sozinho) setNotas(lista);
     router.refresh();
+    return lista;
   }
+
+  /** Meses anteriores primeiro: a conclusão compara com o mês passado. */
+  async function gerar() {
+    setNotas(null);
+    let antes: string[] | null = [];
+    if (mes > 1) {
+      setEtapa("Gerando: buscando os meses anteriores para o comparativo…");
+      antes = await mesesAnteriores(false);
+    }
+    setEtapa(`Gerando: importando os números de ${nomeDoMes(mes).toLowerCase()}…`);
+    const depois = await importar(false);
+    setEtapa(null);
+    if (depois) {
+      setAviso({ tom: "ok", texto: "Relatório gerado com os números da Meta." });
+      setNotas([...depois, ...(antes ?? [])]);
+    }
+  }
+
+  const gerou = useRef(false);
+  useEffect(() => {
+    if (!gerarAoAbrir || !contaConectada || gerou.current) return;
+    gerou.current = true;
+    // Tira o ?gerar=1 da barra: recarregar a página não deve importar de novo.
+    router.replace(`/projects/${projectId}/relatorio/${id}`, { scroll: false });
+    void gerar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="flex h-full flex-col">
@@ -204,7 +243,14 @@ export function RelatorioView({
         </div>
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          {aviso && (
+          {etapa && (
+            <span className="flex items-center gap-1.5 text-[11.5px] text-muted">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              {etapa}
+            </span>
+          )}
+
+          {!etapa && aviso && (
             <span
               className={`max-w-[42ch] truncate text-[11.5px] ${
                 aviso.tom === "ok" ? "text-ok" : "text-warn"
@@ -216,7 +262,7 @@ export function RelatorioView({
           )}
 
           {contaConectada && (
-            <button onClick={importar} disabled={importando} className="btn-ghost">
+            <button onClick={() => importar()} disabled={importando || !!etapa} className="btn-ghost">
               {importando ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
@@ -228,8 +274,8 @@ export function RelatorioView({
 
           {contaConectada && mes > 1 && (
             <button
-              onClick={mesesAnteriores}
-              disabled={buscandoMeses}
+              onClick={() => mesesAnteriores()}
+              disabled={buscandoMeses || !!etapa}
               className="btn-ghost"
               title="Cria e importa os meses anteriores deste ano que ainda não têm relatório"
             >

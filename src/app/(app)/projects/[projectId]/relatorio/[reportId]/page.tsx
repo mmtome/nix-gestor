@@ -11,11 +11,14 @@ export const maxDuration = 300;
 
 export default async function RelatorioPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ projectId: string; reportId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const user = await requireUser();
   const { projectId, reportId } = await params;
+  const { gerar } = await searchParams;
   await assertProjectAccess(user, projectId, false);
 
   const r = await db.relatorioMensal.findUnique({
@@ -92,6 +95,7 @@ export default async function RelatorioPage({
       inicial={inicial}
       outrosMeses={outros}
       contaConectada={!!(conta?.igUserId && conta?.accessToken)}
+      gerarAoAbrir={gerar === "1"}
     />
   );
 }

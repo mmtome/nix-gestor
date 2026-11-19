@@ -244,7 +244,7 @@ type SerieInsight = {
   data?: { name: string; values?: { value: number }[] }[];
 };
 
-type Media = {
+export type Media = {
   id: string;
   caption?: string;
   media_type?: string;
@@ -257,7 +257,7 @@ type Media = {
 
 /** As mídias publicadas na janela. A listagem vem da mais nova para a mais
     antiga: paginamos até passar do início e paramos. */
-async function midiasDoPeriodo(cred: Credencial, inicio: Date, fim: Date) {
+async function midiasDoPeriodo(cred: Credencial, inicio: Date, fim: Date): Promise<Media[]> {
   const campos =
     "id,caption,media_type,media_product_type,timestamp,like_count,comments_count" +
     ",insights.metric(views,shares,saved,total_interactions)";
@@ -294,7 +294,7 @@ function formato(m: Media) {
   return "Foto";
 }
 
-function destaque(m: Media, valor: number, projectId: string, nota?: string): Destaque {
+function destaque(m: Media, valor: number, projectId: string, extra?: string): Destaque {
   const data = m.timestamp
     ? new Date(m.timestamp).toLocaleDateString("pt-BR", {
         day: "2-digit",
@@ -308,7 +308,7 @@ function destaque(m: Media, valor: number, projectId: string, nota?: string): De
     rotulo: m.media_product_type === "REELS" ? "REEL" : m.media_type === "CAROUSEL_ALBUM" ? "CARROSSEL" : "FEED",
     valor,
     imagemUrl: `/api/instagram/midia/${m.id}?projeto=${encodeURIComponent(projectId)}`,
-    nota: nota ?? ([legenda, data].filter(Boolean).join(" · ") || undefined),
+    nota: [legenda, data, extra].filter(Boolean).join(" · ") || undefined,
   };
 }
 
@@ -316,17 +316,34 @@ function destaque(m: Media, valor: number, projectId: string, nota?: string): De
 
 const pct = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 
+/** Todas as mídias de um trecho do ano, numa listagem só — para os meses
+    anteriores não paginarem o perfil inteiro uma vez cada. */
+export async function buscarMidias(
+  conta: { igUserId: string | null; accessToken: string | null } | null,
+  ano: number,
+  mesInicial: number,
+  mesFinal: number,
+): Promise<Media[] | undefined> {
+  const cred = credencialDaConta(conta);
+  if (!cred) return undefined;
+  const r = await tentar(() =>
+    midiasDoPeriodo(cred, janela(ano, mesInicial).inicio, janela(ano, mesFinal).fim),
+  );
+  return r.v;
+}
+
 /**
  * @param completo  `false` nos meses anteriores puxados para o comparativo:
- *                  demografia e horários são sempre os de agora e não
- *                  descrevem um mês antigo, então ficam de fora.
+ *                  demografia, horários e destaques ficam de fora, e os
+ *                  seguidores também (a API só sabe o número de hoje).
+ * @param midias    lista já buscada por `buscarMidias`; sem ela, busca aqui.
  */
 export async function importarMes(
   projectId: string,
   conta: { igUserId: string | null; accessToken: string | null } | null,
   ano: number,
   mes: number,
-  completo = true,
+  { completo = true, midias }: { completo?: boolean; midias?: Media[] } = {},
 ): Promise<ResultadoImportacao> {
   const cred = credencialDaConta(conta);
   if (!cred) {
@@ -364,7 +381,7 @@ export async function importarMes(
       tentar(() => total(cred, "shares", since, until)),
       tentar(() => total(cred, "saves", since, until)),
       tentar(() => saldoDeSeguidores(cred, since, until)),
-      until < agora
+      completo && until < agora
         ? tentar(() => saldoDeSeguidores(cred, until, agora))
         : Promise.resolve({ v: { ganhos: 0, perdidos: 0, saldo: 0 }, erro: undefined }),
       tentar(() => total(cred, "website_clicks", since, until)),
@@ -389,7 +406,7 @@ export async function importarMes(
 
   /* ---------------------------- seguidores ------------------------------ */
   const hoje = perfil.v?.followers_count;
-  if (hoje !== undefined && depois.v) {
+  if (hoje !== undefined && depois.v && completo) {
     dados.seguidores = hoje - depois.v.saldo;
   } else if (hoje !== undefined && completo) {
     dados.seguidores = hoje;
@@ -397,7 +414,7 @@ export async function importarMes(
   }
   if (saldo.v) {
     dados.seguidoresDelta = saldo.v.saldo;
-    avisos.push(
+    if (completo) avisos.push(
       `Seguidores no mês: ${saldo.v.ganhos.toLocaleString("pt-BR")} novos e ${saldo.v.perdidos.toLocaleString("pt-BR")} deixaram de seguir.`,
     );
     const noInicio = (dados.seguidores ?? 0) - saldo.v.saldo;
@@ -420,7 +437,9 @@ export async function importarMes(
   }
 
   /* ------------------------------- mídias -------------------------------- */
-  const lista = await tentar(() => midiasDoPeriodo(cred, inicio, fim));
+  const lista = midias
+    ? { v: midias.filter((m) => m.timestamp && new Date(m.timestamp) >= inicio && new Date(m.timestamp) < fim), erro: undefined }
+    : await tentar(() => midiasDoPeriodo(cred, inicio, fim));
   if (lista.v) {
     const doMes = lista.v;
     const reels = doMes.filter((m) => m.media_product_type === "REELS");
@@ -470,7 +489,7 @@ export async function importarMes(
           v,
           projectId,
           i === 0 && totalPosts
-            ? `${pct((v / totalPosts) * 100)}% das interações dos posts do mês`
+            ? `${pct((v / totalPosts) * 100)}% das interações dos posts`
             : undefined,
         );
       });

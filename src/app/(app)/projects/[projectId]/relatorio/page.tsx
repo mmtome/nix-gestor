@@ -60,6 +60,7 @@ export default async function RelatorioListaPage({
         <NovoRelatorio
           projectId={projectId}
           ocupados={relatorios.map((r) => `${r.ano}-${r.mes}`)}
+          contaConectada={!!(conta?.igUserId && conta?.accessToken)}
         />
         <ContaInstagram
           projectId={projectId}
