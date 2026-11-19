@@ -294,6 +294,25 @@ function formato(m: Media) {
   return "Foto";
 }
 
+/** Agrupa por legenda, dia e formato e fica com a cópia mais vista de cada. */
+function semRepetidos(midias: Media[]) {
+  const melhor = new Map<string, Media>();
+  const chave = (m: Media) =>
+    [
+      formato(m),
+      (m.timestamp ?? "").slice(0, 10),
+      (m.caption ?? "").replace(/\s+/g, " ").trim().toLowerCase(),
+    ].join("|");
+  for (const m of midias) {
+    // Sem legenda não há como afirmar que é repetido.
+    if (!m.caption?.trim()) continue;
+    const atual = melhor.get(chave(m));
+    if (!atual || metrica(m, "views") > metrica(atual, "views")) melhor.set(chave(m), m);
+  }
+  const repetidos = midias.filter((m) => m.caption?.trim() && melhor.get(chave(m)) !== m);
+  return { unicos: midias.filter((m) => !repetidos.includes(m)), repetidos };
+}
+
 function destaque(m: Media, valor: number, projectId: string, extra?: string): Destaque {
   const data = m.timestamp
     ? new Date(m.timestamp).toLocaleDateString("pt-BR", {
@@ -470,12 +489,25 @@ export async function importarMes(
       dados.formatoTop = medias.sort((a, b) => b[1] - a[1])[0][0];
     }
 
-    if (completo && doMes.length >= 2) {
-      const porViews = [...doMes].sort((a, b) => metrica(b, "views") - metrica(a, "views"));
-      const porInter = [...doMes].sort(
+    // Post repetido (mesma legenda, dia e formato — repostagem ou teste de
+    // reels) entra nos totais, mas não nos destaques: a cópia fraca aparecia
+    // entre os piores ao lado da boa entre os melhores.
+    const { unicos, repetidos } = semRepetidos(doMes);
+    for (const m of repetidos) {
+      avisos.push(
+        `Post repetido fora dos destaques: ${destaque(m, metrica(m, "views"), projectId).nota ?? m.id} (${metrica(
+          m,
+          "views",
+        ).toLocaleString("pt-BR")} visualizações).`,
+      );
+    }
+
+    if (completo && unicos.length >= 2) {
+      const porViews = [...unicos].sort((a, b) => metrica(b, "views") - metrica(a, "views"));
+      const porInter = [...unicos].sort(
         (a, b) => metrica(b, "total_interactions") - metrica(a, "total_interactions"),
       );
-      const totalPosts = porInter.reduce((s, m) => s + metrica(m, "total_interactions"), 0);
+      const totalPosts = doMes.reduce((s, m) => s + metrica(m, "total_interactions"), 0);
 
       dados.topVisualizacoes = porViews.slice(0, 3).map((m) => destaque(m, metrica(m, "views"), projectId));
       dados.piorVisualizacoes = porViews
