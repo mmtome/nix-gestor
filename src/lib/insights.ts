@@ -2,6 +2,8 @@ import "server-only";
 /* Login unificado: graph.facebook.com com o id da conta no caminho. O token
    vem do "Conectar com Instagram" (api/instagram/callback) e fica cifrado. */
 import { GRAPH, decifrar } from "./meta";
+import { resumirComentarios, resumirPosts, type ComentarioApi } from "./comunidade";
+import type { ExtrasRelatorio } from "./relatorio";
 
 /**
  * Importação de métricas do Instagram (Graph API).
@@ -65,6 +67,7 @@ export type DadosImportados = {
   localizacoes?: Fatia[];
   generos?: Fatia[];
   horarios?: { hora: number; valor: number }[];
+  extras?: ExtrasRelatorio;
   topVisualizacoes?: Destaque[];
   piorVisualizacoes?: Destaque[];
   topInteracoes?: Destaque[];
@@ -271,10 +274,7 @@ async function midiasDoPeriodo(cred: Credencial, inicio: Date, fim: Date): Promi
 
     const maisAntiga = lote.at(-1)?.timestamp;
     if (!r.paging?.next || !maisAntiga || new Date(maisAntiga) < inicio) break;
-    // O `next` vem com o token embutido; `buscar` põe o dele de novo.
-    const prox = new URL(r.paging.next);
-    prox.searchParams.delete("access_token");
-    url = prox.pathname.replace(/^\/v[\d.]+\//, "") + prox.search;
+    url = proxima(r.paging.next);
   }
 
   return midias.filter((m) => {
@@ -282,6 +282,36 @@ async function midiasDoPeriodo(cred: Credencial, inicio: Date, fim: Date): Promi
     const t = new Date(m.timestamp);
     return t >= inicio && t < fim;
   });
+}
+
+/** O `next` da paginação vem com o token embutido; `buscar` põe o dele de novo. */
+function proxima(next: string) {
+  const u = new URL(next);
+  u.searchParams.delete("access_token");
+  return u.pathname.replace(/^\/v[\d.]+\//, "") + u.search;
+}
+
+/** Comentários de um post, com as respostas — para saber quais a conta respondeu. */
+async function comentariosDoPost(cred: Credencial, mediaId: string) {
+  let url = `${mediaId}/comments?fields=id,text,username,timestamp,like_count,replies{username,timestamp}&limit=50`;
+  const todos: ComentarioApi[] = [];
+  for (let pagina = 0; pagina < 20; pagina++) {
+    const r = await buscar<{ data?: ComentarioApi[]; paging?: { next?: string } }>(url, cred);
+    todos.push(...(r.data ?? []));
+    if (!r.paging?.next) break;
+    url = proxima(r.paging.next);
+  }
+  return todos;
+}
+
+/** Comentários de todos os posts, cinco posts por vez. */
+async function comentariosDosPosts(cred: Credencial, posts: Media[]) {
+  const todos: ComentarioApi[] = [];
+  for (let i = 0; i < posts.length; i += 5) {
+    const lotes = await Promise.all(posts.slice(i, i + 5).map((m) => comentariosDoPost(cred, m.id)));
+    for (const l of lotes) todos.push(...l);
+  }
+  return todos;
 }
 
 const metrica = (m: Media, nome: string) =>
@@ -362,7 +392,11 @@ export async function importarMes(
   conta: { igUserId: string | null; accessToken: string | null } | null,
   ano: number,
   mes: number,
-  { completo = true, midias }: { completo?: boolean; midias?: Media[] } = {},
+  {
+    completo = true,
+    midias,
+    usuario = "",
+  }: { completo?: boolean; midias?: Media[]; /** @ da conta, para separar as respostas dela. */ usuario?: string } = {},
 ): Promise<ResultadoImportacao> {
   const cred = credencialDaConta(conta);
   if (!cred) {
@@ -389,7 +423,7 @@ export async function importarMes(
   if (perfil.erro) return { ok: false, motivo: perfil.erro };
 
   /* ----------------------- métricas de conta, em paralelo ----------------- */
-  const [views, reach, engajadas, inter, likes, comments, shares, saves, saldo, depois, links] =
+  const [views, reach, engajadas, inter, likes, comments, shares, saves, saldo, depois, links, porTipo, respostas] =
     await Promise.all([
       tentar(() => total(cred, "views", since, until)),
       tentar(() => total(cred, "reach", since, until)),
@@ -404,6 +438,8 @@ export async function importarMes(
         ? tentar(() => saldoDeSeguidores(cred, until, agora))
         : Promise.resolve({ v: { ganhos: 0, perdidos: 0, saldo: 0 }, erro: undefined }),
       tentar(() => total(cred, "website_clicks", since, until)),
+      completo ? tentar(() => total(cred, "views", since, until, "media_product_type")) : Promise.resolve({ v: undefined, erro: undefined }),
+      completo ? tentar(() => total(cred, "replies", since, until)) : Promise.resolve({ v: undefined, erro: undefined }),
     ]);
 
   dados.visualizacoes = views.v?.valor;
@@ -529,6 +565,27 @@ export async function importarMes(
         .slice(-2)
         .reverse()
         .map((m) => destaque(m, metrica(m, "total_interactions"), projectId));
+    }
+
+    if (completo && doMes.length) {
+      const extras: ExtrasRelatorio = resumirPosts(
+        doMes.map((m) => ({
+          formato: formato(m),
+          timestamp: m.timestamp,
+          views: metrica(m, "views"),
+          interacoes: metrica(m, "total_interactions"),
+        })),
+      );
+      if (porTipo.v && Object.keys(porTipo.v.porDimensao).length) extras.viewsPorTipo = porTipo.v.porDimensao;
+      if (respostas.v) extras.respostasStories = respostas.v.valor;
+
+      const comentarios = await tentar(() => comentariosDosPosts(cred, doMes));
+      if (comentarios.v) {
+        extras.comunidade = resumirComentarios(comentarios.v, usuario);
+      } else {
+        avisos.push(`Comentários não vieram da API (${comentarios.erro}): o slide de comunidade fica de fora.`);
+      }
+      dados.extras = extras;
     }
   } else {
     avisos.push(`Posts do mês não vieram da API (${lista.erro}).`);

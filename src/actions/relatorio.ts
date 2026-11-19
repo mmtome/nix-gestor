@@ -7,6 +7,8 @@ import { assertProjectAccess } from "@/lib/permissions";
 import { refreshAll } from "@/lib/revalidate";
 import { buscarMidias, importarMes } from "@/lib/insights";
 import { rascunhoDaConclusao } from "@/lib/conclusao";
+import { comoExtras } from "@/lib/relatorio";
+import { storiesDoMes } from "@/lib/stories";
 
 /* ============================================================================
    Relatório de resultados — criação, edição e importação.
@@ -155,20 +157,37 @@ export async function importarDaApi(id: string) {
 
   const alvo = await db.relatorioMensal.findUnique({
     where: { id },
-    select: { projectId: true, ano: true, mes: true, conclusao: true },
+    select: { projectId: true, ano: true, mes: true, conclusao: true, extras: true },
   });
   if (!alvo) return { ok: false as const, erro: "Relatório não encontrado." };
   await assertProjectAccess(user, alvo.projectId, true);
 
   const conta = await db.instagramAccount.findUnique({
     where: { projectId: alvo.projectId },
-    select: { igUserId: true, accessToken: true },
+    select: { igUserId: true, accessToken: true, username: true },
   });
 
-  const r = await importarMes(alvo.projectId, conta, alvo.ano, alvo.mes);
+  const r = await importarMes(alvo.projectId, conta, alvo.ano, alvo.mes, {
+    usuario: conta?.username ?? "",
+  });
   if (!r.ok) return { ok: false as const, erro: r.motivo };
 
   const preenchidos: Record<string, unknown> = soComValor(r.dados);
+
+  // Extras se somam aos que já havia: um bloco que não veio desta vez fica.
+  if (r.dados.extras) {
+    preenchidos.extras = { ...comoExtras(alvo.extras), ...r.dados.extras };
+  }
+
+  // Stories: a API não guarda os passados, mas a coleta de hora em hora sim.
+  const stories = await storiesDoMes(alvo.projectId, alvo.ano, alvo.mes);
+  if (stories.length) {
+    preenchidos.stories = stories.length;
+    preenchidos.mediaViewStories = Math.round(
+      stories.reduce((s, x) => s + x.views, 0) / stories.length,
+    );
+    r.avisos.push(`Stories: ${stories.length} coletados enquanto estavam no ar.`);
+  }
 
   // Conclusão vazia ganha um rascunho; a que alguém escreveu fica como está.
   if (!alvo.conclusao?.trim()) {

@@ -27,6 +27,87 @@ export type Destaque = {
 
 export const ROTULOS_DESTAQUE = ["FEED", "REEL", "STORY"] as const;
 
+/* ------------------------------------------------------------------ extras */
+
+/* O que a importação traz a mais e não tem coluna própria fica em
+   `RelatorioMensal.extras`. Cada bloco é opcional: relatório antigo ou
+   preenchido à mão simplesmente não tem, e o slide correspondente some. */
+
+export type Contagem = { rotulo: string; n: number };
+
+/** Comentários nos posts do mês, sem contar os da própria conta. */
+export type Comunidade = {
+  comentarios: number;
+  pessoas: number;
+  respondidos: number;
+  perguntas: number;
+  /** Mediana, em minutos, entre o comentário e a primeira resposta da conta. */
+  tempoRespostaMin: number | null;
+  topPessoas: Contagem[];
+  emojis: Contagem[];
+  palavras: Contagem[];
+  maisCurtidos: { texto: string; usuario: string; curtidas: number }[];
+};
+
+/** Médias por post de um grupo (formato, dia da semana, faixa de horário). */
+export type MediaPorGrupo = {
+  rotulo: string;
+  posts: number;
+  views: number;
+  interacoes: number;
+};
+
+export type ExtrasRelatorio = {
+  comunidade?: Comunidade;
+  formatos?: MediaPorGrupo[];
+  dias?: MediaPorGrupo[];
+  faixas?: MediaPorGrupo[];
+  /** Visualizações do mês por tipo de conteúdo (POST, REEL, STORY…). */
+  viewsPorTipo?: Record<string, number>;
+  respostasStories?: number;
+};
+
+const objeto = (v: unknown): v is Record<string, unknown> =>
+  !!v && typeof v === "object" && !Array.isArray(v);
+const lista = <T>(v: unknown): T[] => (Array.isArray(v) ? (v.filter(objeto) as T[]) : []);
+
+/** Fronteira do Json `extras`: forma garantida, nunca lança. */
+export function comoExtras(v: unknown): ExtrasRelatorio {
+  if (!objeto(v)) return {};
+  const c = objeto(v.comunidade) ? v.comunidade : null;
+  return {
+    comunidade: c
+      ? {
+          comentarios: Number(c.comentarios) || 0,
+          pessoas: Number(c.pessoas) || 0,
+          respondidos: Number(c.respondidos) || 0,
+          perguntas: Number(c.perguntas) || 0,
+          tempoRespostaMin: typeof c.tempoRespostaMin === "number" ? c.tempoRespostaMin : null,
+          topPessoas: lista<Contagem>(c.topPessoas),
+          emojis: lista<Contagem>(c.emojis),
+          palavras: lista<Contagem>(c.palavras),
+          maisCurtidos: lista<Comunidade["maisCurtidos"][number]>(c.maisCurtidos),
+        }
+      : undefined,
+    formatos: lista<MediaPorGrupo>(v.formatos),
+    dias: lista<MediaPorGrupo>(v.dias),
+    faixas: lista<MediaPorGrupo>(v.faixas),
+    viewsPorTipo: objeto(v.viewsPorTipo) ? (v.viewsPorTipo as Record<string, number>) : undefined,
+    respostasStories: typeof v.respostasStories === "number" ? v.respostasStories : undefined,
+  };
+}
+
+/** "1h07", "35 min", "2 dias" — tempo de resposta legível. */
+export function duracao(min: number): string {
+  if (min < 60) return `${Math.max(1, Math.round(min))} min`;
+  if (min < 48 * 60) {
+    const h = Math.floor(min / 60);
+    const m = Math.round(min % 60);
+    return m ? `${h}h${String(m).padStart(2, "0")}` : `${h}h`;
+  }
+  return `${Math.round(min / 1440)} dias`;
+}
+
 /* ------------------------------------------------------------- normalização */
 
 /**

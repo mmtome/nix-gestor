@@ -78,6 +78,8 @@ model Project {
   templates  SubtaskTemplate[]
   instagram  InstagramAccount?
   relatorios RelatorioMensal[]
+  stories    StoryColetado[]
+  exportados DadosExportados[]
 }
 
 model ProjectMember {
@@ -128,6 +130,7 @@ model Task {
    * --- publicação automática no Instagram -------------------------------
    */
   /**
+   * /**
    * /* O check de aprovação é a única ação manual: a partir dele, o post sobe
    * sozinho quando `dueAt` chegar. Ver src/lib/publicador.ts.
    */
@@ -368,6 +371,10 @@ model RelatorioMensal {
 
   conclusao String?
 
+  // O que vem a mais da API e não tem coluna própria: comunidade (comentários),
+  // desempenho por formato, melhores dias e horários, visualizações por tipo.
+  extras Json @default("{}")
+
   fonte        String   @default("manual")
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
@@ -376,4 +383,42 @@ model RelatorioMensal {
 
   @@unique([projectId, ano, mes])
   @@index([projectId, ano])
+}
+
+/// Story de uma conta conectada, guardado enquanto está no ar. A Meta apaga os
+/// números do story em 24 h; a coleta de hora em hora (/api/cron/stories) é o
+/// que deixa o relatório do mês contar stories.
+model StoryColetado {
+  id                String   @id @default(cuid())
+  projectId         String
+  mediaId           String   @unique
+  publicadoEm       DateTime
+  tipo              String?
+  views             Int      @default(0)
+  reach             Int      @default(0)
+  respostas         Int      @default(0)
+  compartilhamentos Int      @default(0)
+  interacoes        Int      @default(0)
+  coletadoEm        DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, publicadoEm])
+}
+
+/// Resumo por mês do arquivo de "Exportar suas informações" do Instagram.
+/// O arquivo é lido no navegador; aqui chegam só os números agregados
+/// (`tipo`: "direct", "seguidores", "conteudo") — nunca as conversas.
+model DadosExportados {
+  id           String   @id @default(cuid())
+  projectId    String
+  ano          Int
+  mes          Int
+  tipo         String
+  dados        Json
+  atualizadoEm DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, ano, mes, tipo])
 }

@@ -1,7 +1,10 @@
 /**
  * O deck do relatório de resultados.
  *
- * Onze slides 16:9, no padrão das apresentações que a agência já entrega.
+ * Slides 16:9 no padrão das apresentações que a agência já entrega. Os que
+ * dependem de dado opcional (horários, destaques, formatos, comunidade,
+ * comparativos, conclusão) só aparecem quando há dado, e a numeração segue o
+ * que foi impresso.
  *
  * Escala: cada slide é um container de consulta e a fonte-base é 1cqw, então
  * TODA medida interna em `em` vale um percentual da largura do slide. O mesmo
@@ -19,8 +22,16 @@ import {
   periodoPorExtenso,
   multiploDeAlcance,
   temDados,
+  duracao,
 } from "@/lib/relatorio";
-import type { Comparativo, Destaque, Fatia, PontoHora } from "@/lib/relatorio";
+import type {
+  Comparativo,
+  Destaque,
+  ExtrasRelatorio,
+  Fatia,
+  MediaPorGrupo,
+  PontoHora,
+} from "@/lib/relatorio";
 import {
   GraficoHorarios,
   GraficoPizza,
@@ -66,6 +77,7 @@ export type DadosDeck = {
   conclusao: string | null;
   fonte: string;
   comparativos: Comparativo[];
+  extras: ExtrasRelatorio;
 };
 
 /* -------------------------------------------------------------- primitivas */
@@ -273,10 +285,48 @@ function SlideDesempenho({
   );
 }
 
+/** Barras horizontais de média por post; a maior em âmbar. */
+function BarrasMedia({ grupos }: { grupos: MediaPorGrupo[] }) {
+  const max = Math.max(...grupos.map((g) => g.interacoes), 1);
+  return (
+    <ul className="flex flex-col gap-[0.55em]">
+      {grupos.map((g) => (
+        <li key={g.rotulo} className="grid grid-cols-[9.5em_1fr_4.2em] items-center gap-[0.8em] text-[1.1em]">
+          <span className="truncate text-[#4E4257]">{g.rotulo}</span>
+          <div className="h-[0.55em] overflow-hidden rounded-full bg-[#EFE7F3]">
+            <div
+              className={`h-full rounded-full ${g.interacoes === max ? "bg-[#FFAB00]" : "bg-[#8013A8]"}`}
+              style={{ width: `${(g.interacoes / max) * 100}%` }}
+            />
+          </div>
+          <span className="text-right font-semibold tabular-nums text-[#231A28]">{numero(g.interacoes)}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+const TIPOS: Record<string, string> = {
+  STORY: "Stories",
+  REEL: "Reels",
+  POST: "Posts",
+  CAROUSEL_CONTAINER: "Carrosséis",
+  AD: "Anúncios",
+};
+
 /* ------------------------------------------------------------------- deck */
 
 export function Deck({ d }: { d: DadosDeck }) {
   const multiplo = multiploDeAlcance(d.alcance, d.seguidores);
+  const ex = d.extras;
+  const com = ex.comunidade;
+  const porTipo = Object.entries(ex.viewsPorTipo ?? {})
+    .filter(([, v]) => v > 0)
+    .sort((a, b) => b[1] - a[1]);
+
+  // Numeração na ordem do que aparece: slide sem dado não deixa buraco.
+  let contador = 1;
+  const proximo = () => ++contador;
   const mesNome = nomeDoMes(d.mes);
 
   const principais = d.comparativos
@@ -320,7 +370,7 @@ export function Deck({ d }: { d: DadosDeck }) {
       </Slide>
 
       {/* 02 — Destaques -------------------------------------------------- */}
-      <Slide numeroSlide={2}>
+      <Slide numeroSlide={proximo()}>
         <div className="flex h-full flex-col justify-center px-[5em] pb-[4em]">
           <p className="text-[1.3em] uppercase tracking-[0.24em] text-[#8013A8]">
             {periodoPorExtenso(d.ano, d.mes)}
@@ -348,11 +398,22 @@ export function Deck({ d }: { d: DadosDeck }) {
               <strong className="text-[#8013A8]">{decimal(multiplo, 1)} vezes</strong>.
             </p>
           )}
+
+          {porTipo.length > 1 && (
+            <div className="mt-[2.2em] flex flex-wrap gap-[1em]">
+              {porTipo.map(([tipo, v]) => (
+                <span key={tipo} className="rounded-[0.5em] bg-[#F2ECF4] px-[1em] py-[0.45em] text-[1.2em] text-[#4E4257]">
+                  <strong className="tabular-nums text-[#231A28]">{numero(v)}</strong> visualizações em{" "}
+                  {(TIPOS[tipo] ?? tipo).toLowerCase()}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </Slide>
 
       {/* 03 — Visão geral ------------------------------------------------ */}
-      <Slide numeroSlide={3}>
+      <Slide numeroSlide={proximo()}>
         <div className="flex h-full flex-col px-[4em] pb-[5em] pt-[3.4em]">
           <Titulo>Visão geral</Titulo>
           <p className="mt-[0.3em] text-[1.6em] font-bold uppercase tracking-[0.02em] text-[#231A28]">
@@ -390,6 +451,7 @@ export function Deck({ d }: { d: DadosDeck }) {
               <Metrica
                 rotulo="Média de visualização · stories"
                 valor={d.mediaViewStories ? numero(d.mediaViewStories) : "—"}
+                nota={ex.respostasStories ? `${numero(ex.respostasStories)} respostas aos stories` : undefined}
               />
             </div>
 
@@ -410,7 +472,7 @@ export function Deck({ d }: { d: DadosDeck }) {
       </Slide>
 
       {/* 04 — Audiência -------------------------------------------------- */}
-      <Slide numeroSlide={4}>
+      <Slide numeroSlide={proximo()}>
         <div className="flex h-full flex-col px-[4em] pb-[5em] pt-[3.4em]">
           <div className="flex items-start justify-between gap-[3em]">
             <Titulo>Audiência</Titulo>
@@ -455,7 +517,7 @@ export function Deck({ d }: { d: DadosDeck }) {
 
       {/* 05 — Horários --------------------------------------------------- */}
       {d.horarios.length >= 2 && (
-        <Slide numeroSlide={5}>
+        <Slide numeroSlide={proximo()}>
           <div className="flex h-full flex-col px-[4em] pb-[5em] pt-[3.4em]">
             <Titulo>Horários</Titulo>
             <p className="mt-[0.4em] text-[1.4em] text-[#4E4257]">
@@ -471,7 +533,7 @@ export function Deck({ d }: { d: DadosDeck }) {
       {/* 06 e 07 — Desempenho -------------------------------------------- */}
       {d.topVisualizacoes.length > 0 && (
         <SlideDesempenho
-          numeroSlide={6}
+          numeroSlide={proximo()}
           titulo="Desempenho de visualizações"
           topo={d.topVisualizacoes}
           piores={d.piorVisualizacoes}
@@ -480,7 +542,7 @@ export function Deck({ d }: { d: DadosDeck }) {
       )}
       {d.topInteracoes.length > 0 && (
         <SlideDesempenho
-          numeroSlide={7}
+          numeroSlide={proximo()}
           titulo="Desempenho de interações"
           topo={d.topInteracoes}
           piores={d.piorInteracoes}
@@ -488,9 +550,135 @@ export function Deck({ d }: { d: DadosDeck }) {
         />
       )}
 
+      {/* Formatos e horários --------------------------------------------- */}
+      {(ex.formatos?.length ?? 0) > 0 && (
+        <Slide numeroSlide={proximo()}>
+          <div className="flex h-full flex-col px-[4em] pb-[5em] pt-[3.4em]">
+            <Titulo>Formatos e horários</Titulo>
+            <p className="mt-[0.4em] text-[1.4em] text-[#4E4257]">
+              Média por post publicado no mês
+            </p>
+
+            <div className="mt-[2em] grid min-h-0 flex-1 grid-cols-[1.15fr_1fr] gap-[2.6em]">
+              <div>
+                <div className="grid grid-cols-[1.4fr_0.6fr_1fr_1fr] bg-[#8013A8] px-[1em] py-[0.6em] text-[1.1em] font-bold uppercase tracking-[0.04em] text-white">
+                  <span>Formato</span>
+                  <span className="text-right">Posts</span>
+                  <span className="text-right">Visualizações</span>
+                  <span className="text-right">Interações</span>
+                </div>
+                {ex.formatos!.map((f, i) => (
+                  <div
+                    key={f.rotulo}
+                    className="grid grid-cols-[1.4fr_0.6fr_1fr_1fr] items-baseline border-b border-[#E5DBE9] px-[1em] py-[0.9em] text-[1.45em] tabular-nums"
+                  >
+                    <span className={`font-bold ${i === 0 ? "text-[#FB7601]" : "text-[#231A28]"}`}>{f.rotulo}</span>
+                    <span className="text-right text-[#4E4257]">{numero(f.posts)}</span>
+                    <span className="text-right text-[#231A28]">{numero(f.views)}</span>
+                    <span className="text-right font-bold text-[#231A28]">{numero(f.interacoes)}</span>
+                  </div>
+                ))}
+                <p className="mt-[1em] text-[1.05em] text-[#6E6377]">
+                  Em laranja, o formato com mais interações por post.
+                </p>
+              </div>
+
+              <div className="flex min-h-0 flex-col gap-[1.4em]">
+                {(ex.dias?.length ?? 0) > 0 && (
+                  <Cartao titulo="Interações por dia da postagem">
+                    <BarrasMedia grupos={ex.dias!} />
+                  </Cartao>
+                )}
+                {(ex.faixas?.length ?? 0) > 0 && (
+                  <Cartao titulo="Interações por horário da postagem">
+                    <BarrasMedia grupos={ex.faixas!} />
+                  </Cartao>
+                )}
+              </div>
+            </div>
+          </div>
+        </Slide>
+      )}
+
+      {/* Comunidade ------------------------------------------------------- */}
+      {com && com.comentarios > 0 && (
+        <Slide numeroSlide={proximo()}>
+          <div className="flex h-full flex-col px-[4em] pb-[5em] pt-[3.4em]">
+            <Titulo>Comunidade</Titulo>
+            <p className="mt-[0.4em] text-[1.4em] text-[#4E4257]">
+              Comentários nos posts do mês, sem contar os da própria conta
+            </p>
+
+            <div className="mt-[1.8em] grid grid-cols-4 gap-[1.8em]">
+              <Metrica
+                rotulo="Comentários"
+                valor={numero(com.comentarios)}
+                nota={com.perguntas ? `${numero(com.perguntas)} com pergunta` : undefined}
+              />
+              <Metrica rotulo="Pessoas diferentes" valor={numero(com.pessoas)} />
+              <Metrica
+                rotulo="Respondidos pela conta"
+                valor={porcento((com.respondidos / com.comentarios) * 100, 1)}
+                nota={`${numero(com.respondidos)} comentários`}
+              />
+              <Metrica
+                rotulo="Tempo de resposta"
+                valor={com.tempoRespostaMin != null ? duracao(com.tempoRespostaMin) : "—"}
+                nota="mediana até a resposta da conta"
+                tom="ambar"
+              />
+            </div>
+
+            <div className="mt-[2em] grid min-h-0 flex-1 grid-cols-3 gap-[1.8em]">
+              <Cartao titulo="Quem mais comentou">
+                <ul className="flex flex-col gap-[0.6em]">
+                  {com.topPessoas.map((p) => (
+                    <li key={p.rotulo} className="flex items-baseline justify-between gap-[1em] text-[1.25em]">
+                      <span className="truncate text-[#231A28]">{p.rotulo}</span>
+                      <span className="shrink-0 font-semibold tabular-nums text-[#8013A8]">{numero(p.n)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Cartao>
+              <Cartao titulo="O que mais aparece">
+                <div className="flex flex-wrap gap-[0.5em]">
+                  {com.palavras.map((p) => (
+                    <span key={p.rotulo} className="rounded-[0.4em] bg-[#F2ECF4] px-[0.7em] py-[0.25em] text-[1.1em] text-[#4E4257]">
+                      {p.rotulo} <strong className="tabular-nums text-[#231A28]">{p.n}</strong>
+                    </span>
+                  ))}
+                </div>
+                {com.emojis.length > 0 && (
+                  <p className="mt-[1em] flex flex-wrap gap-[0.9em] text-[1.5em]">
+                    {com.emojis.map((e) => (
+                      <span key={e.rotulo}>
+                        {e.rotulo}
+                        <span className="ml-[0.2em] text-[0.7em] tabular-nums text-[#6E6377]">{e.n}</span>
+                      </span>
+                    ))}
+                  </p>
+                )}
+              </Cartao>
+              <Cartao titulo="Mais curtidos">
+                <ul className="flex flex-col gap-[0.9em]">
+                  {com.maisCurtidos.map((c, i) => (
+                    <li key={i} className="text-[1.1em] leading-snug">
+                      <p className="text-[#231A28]">“{c.texto}”</p>
+                      <p className="mt-[0.2em] text-[0.9em] text-[#6E6377]">
+                        {c.usuario} · {numero(c.curtidas)} curtidas
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </Cartao>
+            </div>
+          </div>
+        </Slide>
+      )}
+
       {/* 08 e 09 — Comparativos ------------------------------------------ */}
       {principais.length > 0 && (
-        <Slide numeroSlide={8}>
+        <Slide numeroSlide={proximo()}>
           <div className="flex h-full flex-col px-[4em] pb-[5em] pt-[3.4em]">
             <Titulo>Comparativos</Titulo>
             <p className="mt-[0.4em] text-[1.4em] text-[#4E4257]">
@@ -509,7 +697,7 @@ export function Deck({ d }: { d: DadosDeck }) {
       )}
 
       {secundarios.length > 0 && (
-        <Slide numeroSlide={9}>
+        <Slide numeroSlide={proximo()}>
           <div className="flex h-full flex-col px-[4em] pb-[5em] pt-[3.4em]">
             <Titulo>Comparativos</Titulo>
             <p className="mt-[0.4em] text-[1.4em] text-[#4E4257]">
@@ -529,7 +717,7 @@ export function Deck({ d }: { d: DadosDeck }) {
 
       {/* 10 — Conclusão --------------------------------------------------- */}
       {bullets.length > 0 && (
-        <Slide numeroSlide={10}>
+        <Slide numeroSlide={proximo()}>
           <div className="flex h-full gap-[3em] px-[4em] pb-[5em] pt-[3.4em]">
             <div className="flex min-w-0 flex-1 flex-col">
               <Titulo>Conclusão</Titulo>

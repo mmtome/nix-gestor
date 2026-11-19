@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { salvarRelatorio, importarDaApi, importarMesesAnteriores } from "@/actions/relatorio";
 import { montarComparativos, nomeDoMes } from "@/lib/relatorio";
-import type { LinhaComparativa } from "@/lib/relatorio";
+import type { ExtrasRelatorio, LinhaComparativa } from "@/lib/relatorio";
 import { Deck, type DadosDeck } from "./Deck";
 import { Editor, type EstadoRelatorio } from "./Editor";
 
@@ -39,6 +39,7 @@ export function RelatorioView({
   outrosMeses,
   contaConectada,
   gerarAoAbrir = false,
+  extrasIniciais,
 }: {
   id: string;
   projectId: string;
@@ -52,9 +53,12 @@ export function RelatorioView({
   contaConectada: boolean;
   /** Veio do "Gerar relatório": puxa tudo da API assim que abre. */
   gerarAoAbrir?: boolean;
+  /** Comunidade, formatos e o resto que não é editado à mão. */
+  extrasIniciais: ExtrasRelatorio;
 }) {
   const router = useRouter();
   const [estado, setEstado] = useState<EstadoRelatorio>(inicial);
+  const [extras, setExtras] = useState<ExtrasRelatorio>(extrasIniciais);
   const [modo, setModo] = useState<"apresentar" | "editar">("apresentar");
   const [sujo, setSujo] = useState(false);
   const [salvando, iniciarSalvar] = useTransition();
@@ -118,8 +122,9 @@ export function RelatorioView({
       conclusao: estado.conclusao || null,
       fonte,
       comparativos: montarComparativos(linhas),
+      extras,
     };
-  }, [estado, outrosMeses, mes, ano, projeto, fonte]);
+  }, [estado, extras, outrosMeses, mes, ano, projeto, fonte]);
 
   function salvar() {
     iniciarSalvar(async () => {
@@ -153,7 +158,11 @@ export function RelatorioView({
       setAviso({ tom: "erro", texto: r.erro ?? "Falha na importação." });
       return null;
     }
-    setEstado((e) => ({ ...e, ...(r.dados as Partial<EstadoRelatorio>) }));
+    const { extras: novos, ...campos } = r.dados as Partial<EstadoRelatorio> & {
+      extras?: ExtrasRelatorio;
+    };
+    setEstado((e) => ({ ...e, ...campos }));
+    if (novos) setExtras((x) => ({ ...x, ...novos }));
     setAviso({ tom: "ok", texto: `${r.campos} campos importados.` });
     if (sozinho) setNotas(r.avisos);
     router.refresh();

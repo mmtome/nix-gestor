@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assertProjectAccess } from "@/lib/permissions";
-import { comoDestaques, comoFatias, comoHorarios } from "@/lib/relatorio";
+import { comoDestaques, comoExtras, comoFatias, comoHorarios } from "@/lib/relatorio";
 import { RelatorioView } from "@/components/relatorio/RelatorioView";
 import type { EstadoRelatorio } from "@/components/relatorio/Editor";
 
@@ -93,6 +93,7 @@ export default async function RelatorioPage({
       mes={r.mes}
       fonte={r.fonte}
       inicial={inicial}
+      extrasIniciais={comoExtras(r.extras)}
       outrosMeses={outros}
       contaConectada={!!(conta?.igUserId && conta?.accessToken)}
       gerarAoAbrir={gerar === "1"}
