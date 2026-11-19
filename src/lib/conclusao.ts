@@ -31,10 +31,14 @@ export type NumerosDoMes = {
 const n = (v: number) => Math.round(v).toLocaleString("pt-BR");
 const pct = (v: number) => v.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 
-function variacao(atual: number, antes: number) {
+/** Variação legível; de base muito pequena, "multiplicou por" em vez de 120.000%. */
+function variacao(atual: number, antes: number, plural: boolean) {
   const x = ((atual - antes) / antes) * 100;
-  if (Math.abs(x) < 3) return "ficaram estáveis";
-  return `${x > 0 ? "subiram" : "caíram"} ${pct(Math.abs(x))}%`;
+  if (Math.abs(x) < 3) return plural ? "ficaram estáveis" : "ficou estável";
+  if (atual / antes >= 10) {
+    return `${plural ? "foram multiplicadas" : "foi multiplicado"} por ${n(atual / antes)}`;
+  }
+  return `${x > 0 ? (plural ? "subiram" : "subiu") : plural ? "caíram" : "caiu"} ${pct(Math.abs(x))}%`;
 }
 
 /** "Legenda do post · 22/10" → "“Legenda do post” (22/10)". */
@@ -47,7 +51,7 @@ function descrever(d: Destaque) {
 
 export function rascunhoDaConclusao(
   m: NumerosDoMes,
-  anterior?: { mes: number; visualizacoes: number; alcance: number } | null,
+  anterior?: { mes: number; posts: number; visualizacoes: number; alcance: number } | null,
 ): string {
   const frases: string[] = [];
   const mes = nomeDoMes(m.mes);
@@ -74,12 +78,14 @@ export function rascunhoDaConclusao(
     frases.push(f + ".");
   }
 
-  if (anterior && anterior.visualizacoes > 0 && anterior.alcance > 0 && m.visualizacoes && m.alcance) {
+  // Mês anterior sem post não é base de comparação: a conta mal existia.
+  if (anterior && anterior.posts > 0 && anterior.visualizacoes > 0 && anterior.alcance > 0 && m.visualizacoes && m.alcance) {
     frases.push(
       `Em relação a ${nomeDoMes(anterior.mes).toLowerCase()}, as visualizações ${variacao(
         m.visualizacoes,
         anterior.visualizacoes,
-      )} e o alcance ${variacao(m.alcance, anterior.alcance).replace("ficaram", "ficou").replace("subiram", "subiu").replace("caíram", "caiu")}.`,
+        true,
+      )} e o alcance ${variacao(m.alcance, anterior.alcance, false)}.`,
     );
   }
 

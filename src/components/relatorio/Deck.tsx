@@ -291,7 +291,7 @@ function BarrasMedia({ grupos }: { grupos: MediaPorGrupo[] }) {
   return (
     <ul className="flex flex-col gap-[0.55em]">
       {grupos.map((g) => (
-        <li key={g.rotulo} className="grid grid-cols-[9.5em_1fr_4.2em] items-center gap-[0.8em] text-[1.1em]">
+        <li key={g.rotulo} className="grid grid-cols-[11.5em_1fr_4.2em] items-center gap-[0.8em] text-[1.1em]">
           <span className="truncate text-[#4E4257]">{g.rotulo}</span>
           <div className="h-[0.55em] overflow-hidden rounded-full bg-[#EFE7F3]">
             <div

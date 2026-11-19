@@ -190,7 +190,7 @@ export function RelatorioView({
       ...(r.criados.length
         ? [`Comparativo: ${nomes(r.criados)} criados e importados (sem destaques nem demografia; abra o mês e use Importar da API para completar).`]
         : []),
-      ...(r.vazios.length ? [`Sem posts nem visualizações, não viraram relatório: ${nomes(r.vazios)}.`] : []),
+      ...(r.vazios.length ? [`Sem nenhum post, não viraram relatório: ${nomes(r.vazios)}.`] : []),
       ...r.falhas.map((f) => `Falhou o mês ${f}`),
     ];
     if (sozinho) setNotas(lista);

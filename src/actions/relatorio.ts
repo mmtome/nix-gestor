@@ -194,7 +194,7 @@ export async function importarDaApi(id: string) {
     const ant = alvo.mes === 1 ? { ano: alvo.ano - 1, mes: 12 } : { ano: alvo.ano, mes: alvo.mes - 1 };
     const anterior = await db.relatorioMensal.findUnique({
       where: { projectId_ano_mes: { projectId: alvo.projectId, ...ant } },
-      select: { mes: true, visualizacoes: true, alcance: true },
+      select: { mes: true, posts: true, visualizacoes: true, alcance: true },
     });
     const rascunho = rascunhoDaConclusao({ mes: alvo.mes, ...r.dados }, anterior);
     if (rascunho) {
@@ -234,7 +234,7 @@ function soComValor(dados: object) {
  * ainda não existem — é o que monta o comparativo do ano sem digitar nada.
  * A Meta guarda dois anos de métricas e de posts.
  *
- * Mês que já tem relatório não é tocado, e mês sem post nem visualização
+ * Mês que já tem relatório não é tocado, e mês sem nenhum post
  * (a conta ainda não existia, por exemplo) não vira relatório vazio.
  */
 export async function importarMesesAnteriores(id: string) {
@@ -280,7 +280,7 @@ export async function importarMesesAnteriores(id: string) {
           falhas.push(`${mes}: ${r.motivo}`);
           return;
         }
-        if (!r.dados.posts && !r.dados.visualizacoes) {
+        if (!r.dados.posts) {
           vazios.push(mes);
           return;
         }
