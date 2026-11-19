@@ -118,20 +118,26 @@ Como a Meta busca a mídia por URL e o Blob é privado, existe
 **só enquanto a tarefa estiver aprovada**. Desmarcar a aprovação fecha a porta
 na hora.
 
-### O que falta para ligar — nada disso existe ainda
+### Conexão com a Meta
 
-1. Conta do cliente como **Business ou Creator**, vinculada a uma página do Facebook.
-2. App no [Meta for Developers](https://developers.facebook.com) com os produtos
-   *Instagram Graph API* e *Facebook Login*.
-3. Permissões: `instagram_basic` e `instagram_manage_insights` (relatório) e
-   `instagram_content_publish` (publicação).
-4. **App Review** da Meta para usar as permissões fora das contas de teste.
-5. Token de longa duração (60 dias, renovável) por conta.
+O app **NIX Gestor** (ID 1670611327843349, portfólio Agência NIX) usa o
+**login unificado** — a Meta não oferece mais o "login do Instagram" a apps
+novos. Passo a passo para quem configura: `docs/guia-conectar-api/guia.html`
+(o PDF sai dele com o Chrome headless).
 
-Com o token em mãos, há dois caminhos: colar em *Relatório › Conta do Instagram*
-(por projeto) ou definir `INSTAGRAM_USER_ID` e `INSTAGRAM_PUBLISH_TOKEN` como
-variáveis de ambiente (conta única). Antes de publicar de verdade, confira a fila
-com `/api/cron/publicar?dry=1` — mostra o que sairia e as URLs, sem enviar nada.
+- *Relatório › Conta do Instagram › Conectar com Instagram* vai a
+  `/api/instagram/conectar`, que manda ao login da Meta com o `config_id`; a
+  volta é `/api/instagram/callback`, que grava a conta e o token **cifrado**
+  (`lib/meta.ts`). O token é de usuário do sistema e não vence.
+- Variáveis: `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET` (os do app da Meta,
+  *Configurações do app › Básico*) e `INSTAGRAM_CONFIG_ID`.
+- Em modo de desenvolvimento, só conecta conta que seja **testadora** do app
+  (*Funções do app › Funções › Testador do Instagram*, convite aceito no
+  Instagram em `accounts/manage_access`).
+
+A publicação ainda usa `INSTAGRAM_USER_ID` e `INSTAGRAM_PUBLISH_TOKEN` em
+`graph.instagram.com` e não está ligada. Antes de publicar de verdade, confira a
+fila com `/api/cron/publicar?dry=1` — mostra o que sairia e as URLs, sem enviar nada.
 
 > **Precisão do agendamento.** O plano Hobby da Vercel só permite cron diário,
 > então o post sai no horário do cron e não no horário exato da tarefa. Publicar
@@ -334,6 +340,7 @@ Variáveis já configuradas no projeto:
 | `DATABASE_URL`, `DATABASE_URL_UNPOOLED` | integração Neon |
 | `AUTH_SECRET` | gerado com `crypto.randomBytes(32)` |
 | `BLOB_READ_WRITE_TOKEN` | opcional — crie um Blob store para habilitar anexos |
+| `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`, `INSTAGRAM_CONFIG_ID` | app NIX Gestor na Meta (ver Conexão com a Meta) |
 
 O `build` roda `prisma generate` antes do `next build`, então o client é gerado
 com o schema atual a cada deploy.

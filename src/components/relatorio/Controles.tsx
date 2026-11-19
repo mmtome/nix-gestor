@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AtSign, Loader2, Plus } from "lucide-react";
-import { criarRelatorio, salvarContaInstagram } from "@/actions/relatorio";
+import { criarRelatorio, desconectarInstagram } from "@/actions/relatorio";
 import { MESES } from "@/lib/relatorio";
 
 /* --------------------------------------------------------- novo relatório */
@@ -89,46 +89,38 @@ export function NovoRelatorio({
 
 /* ------------------------------------------------------- conta do Instagram */
 
+export type RetornoConexao = {
+  ig?: string;
+  conta?: string;
+  motivo?: string;
+  outras?: string;
+};
+
 export function ContaInstagram({
   projectId,
   inicial,
+  retorno,
 }: {
   projectId: string;
-  inicial: { username: string; igUserId: string; temToken: boolean } | null;
+  inicial: { username: string; conectada: boolean; conectadoEm: string | null } | null;
+  /** O que o /api/instagram/callback mandou de volta na URL. */
+  retorno: RetornoConexao;
 }) {
   const router = useRouter();
-  const [aberto, setAberto] = useState(false);
-  const [username, setUsername] = useState(inicial?.username ?? "");
-  const [token, setToken] = useState("");
-  const [resultado, setResultado] = useState<
-    { tom: "ok" | "erro"; texto: string } | null
-  >(null);
-  const [salvando, iniciar] = useTransition();
+  const [confirmar, setConfirmar] = useState(false);
+  const [desligando, iniciar] = useTransition();
 
-  function salvar() {
-    setResultado(null);
+  const conectada = !!inicial?.conectada;
+  const conectar = `/api/instagram/conectar?projeto=${encodeURIComponent(projectId)}`;
+
+  function desconectar() {
     iniciar(async () => {
-      const r = await salvarContaInstagram(projectId, {
-        username,
-        // Campo em branco mantém o token atual em vez de apagá-lo.
-        ...(token ? { accessToken: token } : {}),
-      });
-      if (!r.ok) {
-        setResultado({ tom: "erro", texto: r.erro });
-        return;
-      }
-      setToken("");
-      setResultado({
-        tom: "ok",
-        texto: r.igUserId
-          ? `Conectado como @${r.username} (id ${r.igUserId}).`
-          : "Conta salva.",
-      });
+      await desconectarInstagram(projectId);
+      setConfirmar(false);
+      router.replace(`/projects/${projectId}/relatorio`);
       router.refresh();
     });
   }
-
-  const conectada = !!inicial?.igUserId && !!inicial?.temToken;
 
   return (
     <div className="card p-5">
@@ -138,74 +130,55 @@ export function ContaInstagram({
           <h2 className="text-[13px] font-semibold tracking-tight">Conta do Instagram</h2>
           <p className="mt-0.5 text-[11.5px] text-muted">
             {conectada
-              ? `@${inicial.username} conectada — o botão “Importar da API” aparece dentro do relatório.`
+              ? `@${inicial!.username} conectada${
+                  inicial!.conectadoEm ? ` em ${inicial!.conectadoEm}` : ""
+                } — o botão “Importar da API” aparece dentro do relatório.`
               : "Sem conta conectada. Os relatórios funcionam normalmente no modo manual."}
           </p>
         </div>
-        <button onClick={() => setAberto((v) => !v)} className="btn-ghost shrink-0">
-          {aberto ? "Fechar" : conectada ? "Editar" : "Conectar"}
-        </button>
       </div>
 
-      {aberto && (
-        <div className="mt-4 flex flex-col gap-3 border-t border-line pt-4">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label>
-              <span className="mb-1 block text-[11px] font-medium text-dim">Usuário</span>
-              <input
-                className="field"
-                placeholder="uberabarodeoshow"
-                value={username}
-                onChange={(e) => setUsername(e.target.value.replace(/^@/, ""))}
-              />
-            </label>
-            <div>
-              <span className="mb-1 block text-[11px] font-medium text-dim">
-                Instagram User ID
-              </span>
-              <p className="field tabular-nums text-faint">
-                {inicial?.igUserId || "preenchido a partir do token"}
-              </p>
-            </div>
-          </div>
-
-          <label>
-            <span className="mb-1 block text-[11px] font-medium text-dim">
-              Token de acesso de longa duração
-            </span>
-            <input
-              className="field"
-              type="password"
-              placeholder={inicial?.temToken ? "•••••• (deixe em branco para manter)" : "IGAA..."}
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-            />
-          </label>
-
-          <p className="text-[11px] leading-relaxed text-faint">
-            Cole o token e o app pergunta à Meta de quem ele é — o User ID vem daí, então não
-            há como errar de conta. O token precisa dos escopos{" "}
-            <code>instagram_business_basic</code> e{" "}
-            <code>instagram_business_manage_insights</code>, mais{" "}
-            <code>instagram_business_content_publish</code> se for publicar. A conta precisa ser
-            Business ou Creator.
-          </p>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <button onClick={salvar} disabled={salvando || !username} className="btn-primary">
-              {salvando && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              Salvar conta
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <a href={conectar} className={conectada ? "btn-ghost" : "btn-primary"}>
+          {conectada ? "Reconectar" : "Conectar com Instagram"}
+        </a>
+        {conectada &&
+          (confirmar ? (
+            <>
+              <button onClick={desconectar} disabled={desligando} className="btn-ghost text-warn">
+                {desligando && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                Confirmar desconexão
+              </button>
+              <button onClick={() => setConfirmar(false)} className="btn-ghost">
+                Cancelar
+              </button>
+            </>
+          ) : (
+            <button onClick={() => setConfirmar(true)} className="btn-ghost">
+              Desconectar
             </button>
-            {resultado && (
-              <span
-                className={`text-[11.5px] ${resultado.tom === "ok" ? "text-ok" : "text-warn"}`}
-              >
-                {resultado.texto}
-              </span>
-            )}
-          </div>
-        </div>
+          ))}
+      </div>
+
+      {retorno.ig === "ok" && (
+        <p className="mt-3 text-[11.5px] text-ok">
+          Conectado como @{retorno.conta}.
+          {retorno.outras &&
+            ` O login também trouxe ${retorno.outras
+              .split(",")
+              .map((u) => "@" + u)
+              .join(", ")}, que ficaram de fora deste projeto.`}
+        </p>
       )}
+      {retorno.ig === "erro" && (
+        <p className="mt-3 text-[11.5px] text-warn">{retorno.motivo}</p>
+      )}
+
+      <p className="mt-3 text-[11px] leading-relaxed text-faint">
+        Abre o login da Meta: entre com o Instagram do cliente (ou com o Facebook de quem
+        acessa o portfólio dele), escolha o portfólio e a conta e permita. A conta precisa ser
+        profissional e, enquanto o app estiver em desenvolvimento, testadora do app NIX Gestor.
+      </p>
     </div>
   );
 }

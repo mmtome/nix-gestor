@@ -1,4 +1,7 @@
 import "server-only";
+/* Login unificado: graph.facebook.com com o id da conta no caminho. O token
+   vem do "Conectar com Instagram" (api/instagram/callback) e fica cifrado. */
+import { GRAPH, decifrar } from "./meta";
 
 /**
  * Importação de métricas do Instagram (Graph API).
@@ -19,20 +22,13 @@ import "server-only";
  * - **Stories além de 24h.** Insights de story expiram. Se a importação rodar
  *   depois do fim do mês, os stories antigos já não respondem.
  *
- * Escopos que o token precisa carregar:
- *   `instagram_business_basic`             perfil e mídias
- *   `instagram_business_manage_insights`   métricas de conta e demografia
- *   `instagram_business_content_publish`   só para a publicação automática
+ * Permissões que a configuração de login precisa ter (ver lib/meta.ts):
+ *   `instagram_basic`             perfil e mídias
+ *   `instagram_manage_insights`   métricas de conta e demografia
  *
  * Nada aqui lança para o chamador: sem credencial ou com a API fora, a função
  * devolve o motivo e a UI segue funcionando no modo manual.
  */
-
-/* Mesmo host do publicador — "Instagram API with Instagram Login". Os dois
-   módulos PRECISAM falar a mesma API: são flavors diferentes da Meta, com
-   escopos e tokens próprios, e um token só não serve para os dois. Esta é a
-   variante que não exige página do Facebook vinculada. */
-const GRAPH = "https://graph.instagram.com/v21.0";
 
 export type ResultadoImportacao =
   | { ok: true; dados: DadosImportados; avisos: string[] }
@@ -58,52 +54,11 @@ export type DadosImportados = {
 
 type Credencial = { igUserId: string; token: string };
 
-/** A conta do projeto tem precedência; a global é o fallback de conta única. */
 export function credencialDaConta(
   conta: { igUserId: string | null; accessToken: string | null } | null,
 ): Credencial | null {
-  const igUserId = conta?.igUserId || process.env.INSTAGRAM_USER_ID || "";
-  const token = conta?.accessToken || process.env.INSTAGRAM_PUBLISH_TOKEN || "";
-  if (!igUserId || !token) return null;
-  return { igUserId, token };
-}
-
-/**
- * Descobre o id e o usuário da conta a partir do token.
- *
- * Existe para tirar um passo manual da configuração: o "Instagram User ID" é
- * um número de 17 dígitos que ninguém tem à mão, e digitá-lo errado produz um
- * erro da Meta que não diz qual dos dois campos está errado. Com o token em
- * mãos, a própria API responde quem ele é.
- */
-export async function identificarConta(
-  token: string,
-): Promise<{ ok: true; igUserId: string; username: string } | { ok: false; motivo: string }> {
-  try {
-    const res = await fetch(
-      `${GRAPH}/me?fields=user_id,username&access_token=${encodeURIComponent(token)}`,
-      { cache: "no-store" },
-    );
-    const json = (await res.json().catch(() => ({}))) as {
-      user_id?: string;
-      id?: string;
-      username?: string;
-      error?: { message?: string };
-    };
-    if (!res.ok) {
-      return { ok: false, motivo: json.error?.message || `Graph ${res.status}` };
-    }
-    const igUserId = json.user_id || json.id;
-    if (!igUserId) {
-      return { ok: false, motivo: "A Meta respondeu sem o id da conta." };
-    }
-    return { ok: true, igUserId, username: json.username ?? "" };
-  } catch (e) {
-    return {
-      ok: false,
-      motivo: e instanceof Error ? e.message : "Não foi possível falar com a Meta",
-    };
-  }
+  if (!conta?.igUserId || !conta.accessToken) return null;
+  return { igUserId: conta.igUserId, token: decifrar(conta.accessToken) };
 }
 
 async function buscar<T>(caminho: string, cred: Credencial): Promise<T> {
@@ -146,21 +101,30 @@ type Media = {
   insights?: SerieInsight;
 };
 
-/** Soma os valores diários de uma métrica de conta na janela pedida. */
+/** Soma os valores diários de uma métrica de conta na janela pedida.
+    A Meta recusa janela maior que 30 dias, e mês de 31 passa disso: a
+    consulta vai em fatias. */
 async function somaDiaria(
   metrica: string,
   cred: Credencial,
   since: number,
   until: number,
 ): Promise<number | undefined> {
+  const FATIA = 30 * 24 * 3600;
   try {
-    const r = await buscar<SerieInsight>(
-      `${cred.igUserId}/insights?metric=${metrica}&period=day&since=${since}&until=${until}`,
-      cred,
-    );
-    const valores = r.data?.[0]?.values ?? [];
-    if (!valores.length) return undefined;
-    return valores.reduce((s, v) => s + (v.value || 0), 0);
+    let total = 0;
+    let algum = false;
+    for (let de = since; de < until; de += FATIA) {
+      const ate = Math.min(de + FATIA, until);
+      const r = await buscar<SerieInsight>(
+        `${cred.igUserId}/insights?metric=${metrica}&period=day&since=${de}&until=${ate}`,
+        cred,
+      );
+      const valores = r.data?.[0]?.values ?? [];
+      if (valores.length) algum = true;
+      total += valores.reduce((s, v) => s + (v.value || 0), 0);
+    }
+    return algum ? total : undefined;
   } catch {
     return undefined;
   }
@@ -213,7 +177,7 @@ export async function importarMes(
     return {
       ok: false,
       motivo:
-        "Nenhuma conta do Instagram conectada a este projeto, e não há credencial global configurada.",
+        "Nenhuma conta do Instagram conectada a este projeto. Use “Conectar com Instagram” na lista de relatórios.",
     };
   }
 
@@ -258,7 +222,10 @@ export async function importarMes(
 
       const maisAntiga = lote.at(-1)?.timestamp;
       if (!r.paging?.next || !maisAntiga || new Date(maisAntiga) < inicio) break;
-      url = r.paging.next.replace(`${GRAPH}/`, "").replace(/[?&]access_token=[^&]+/, "");
+      // O `next` vem com o token embutido; `buscar` põe o dele de novo.
+      const prox = new URL(r.paging.next);
+      prox.searchParams.delete("access_token");
+      url = prox.pathname.replace(/^\/v[\d.]+\//, "") + prox.search;
     }
 
     const doMes = midias.filter((m) => {

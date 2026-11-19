@@ -8,11 +8,17 @@ import { NovoRelatorio, ContaInstagram } from "@/components/relatorio/Controles"
 
 export default async function RelatorioListaPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ projectId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const user = await requireUser();
   const { projectId } = await params;
+  const sp = await searchParams;
+  const retorno = Object.fromEntries(
+    ["ig", "conta", "motivo", "outras"].map((k) => [k, typeof sp[k] === "string" ? sp[k] : undefined]),
+  );
   await assertProjectAccess(user, projectId, false);
 
   const [relatorios, conta] = await Promise.all([
@@ -32,7 +38,7 @@ export default async function RelatorioListaPage({
     }),
     db.instagramAccount.findUnique({
       where: { projectId },
-      select: { username: true, igUserId: true, accessToken: true },
+      select: { username: true, igUserId: true, accessToken: true, conectadoEm: true },
     }),
   ]);
 
@@ -61,11 +67,14 @@ export default async function RelatorioListaPage({
             conta
               ? {
                   username: conta.username,
-                  igUserId: conta.igUserId ?? "",
-                  temToken: !!conta.accessToken,
+                  conectada: !!(conta.igUserId && conta.accessToken),
+                  conectadoEm: conta.conectadoEm
+                    ? conta.conectadoEm.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })
+                    : null,
                 }
               : null
           }
+          retorno={retorno}
         />
       </div>
 

@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Conectar a API do Instagram · NIX Gestor</title>
+<style>
+  @font-face { font-family: Poppins; font-weight: 400; src: url(fonts/Poppins-Regular.ttf); }
+  @font-face { font-family: Poppins; font-weight: 500; src: url(fonts/Poppins-Medium.ttf); }
+  @font-face { font-family: Poppins; font-weight: 600; src: url(fonts/Poppins-SemiBold.ttf); }
+  @font-face { font-family: Poppins; font-weight: 700; src: url(fonts/Poppins-Bold.ttf); }
+  @font-face { font-family: Poppins; font-weight: 800; src: url(fonts/Poppins-ExtraBold.ttf); }
+
+  :root {
+    --roxo: #8013A8; --ameixa: #6E327C; --ambar: #FFAB00; --laranja: #FB7601;
+    --tinta: #15101A; --texto: #2E2535; --suave: #4E4257; --cinza: #9A8FA3;
+    --linha: #E6DEEB; --lilas: #F6EEFA; --creme: #FFF6E0; --fundo: #FAF7FB; --code: #F3EEF6;
+  }
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: Poppins, sans-serif; color: var(--texto); font-size: 9.6pt; line-height: 1.55;
+         -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  b, strong { color: var(--tinta); font-weight: 600; }
+  code, .mono { font-family: Consolas, "Cascadia Mono", monospace; font-size: 8.6pt; }
+  .mono { white-space: nowrap; }
+  code { background: var(--code); color: var(--roxo); padding: 1px 5px; border-radius: 3px; white-space: nowrap; }
+
+  .page { width: 210mm; height: 297mm; position: relative; overflow: hidden; padding: 15mm 18mm 0;
+          page-break-after: always; break-after: page; background: #fff; }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+
+  /* cabeçalho e rodapé */
+  .cab { display: flex; align-items: center; justify-content: space-between; padding-bottom: 4.5mm;
+         border-bottom: 1px solid var(--linha); }
+  .cab .marca { display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: 9pt; color: var(--tinta); }
+  .cab .marca svg { width: 19px; height: 19px; }
+  .rotulo { font-size: 7pt; letter-spacing: 0.28em; text-transform: uppercase; color: var(--cinza); }
+  .rod { position: absolute; left: 18mm; right: 18mm; bottom: 11mm; display: flex; align-items: center;
+         justify-content: space-between; padding-top: 4mm; border-top: 1px solid var(--linha);
+         font-size: 7.4pt; color: var(--cinza); }
+  .rod .marca { display: flex; align-items: center; gap: 9px; }
+  .rod svg { width: 17px; height: 17px; }
+
+  /* título de parte */
+  .parte { display: flex; align-items: center; gap: 14px; padding: 5mm 0 3.6mm; border-bottom: 1px solid var(--linha); }
+  .parte .tag { background: var(--roxo); color: #fff; font-size: 7pt; font-weight: 700; letter-spacing: 0.26em;
+                padding: 5px 12px; border-radius: 4px; }
+  .parte h2 { margin: 0; font-size: 19pt; font-weight: 700; color: var(--tinta); letter-spacing: -0.02em; }
+  .parte .nota { margin-left: auto; font-size: 8pt; color: var(--cinza); }
+
+  /* passos */
+  .passo { display: grid; grid-template-columns: 34px 1fr; gap: 14px; padding: 3.5mm 0; border-bottom: 1px solid var(--linha); }
+  .passo:last-child, .passo:has(+ .rod) { border-bottom: 0; }
+  .num { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--roxo), var(--ameixa));
+         color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 9.5pt; margin-top: 1px; }
+  .passo h3 { margin: 0 0 1.5mm; font-size: 11pt; font-weight: 600; color: var(--tinta); display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+  .passo p { margin: 0 0 1.8mm; }
+  .passo p:last-child { margin-bottom: 0; }
+  .estado { font-size: 6.6pt; font-weight: 700; letter-spacing: 0.18em; padding: 3px 8px; border-radius: 20px; text-transform: uppercase; }
+  .estado.ja { background: var(--lilas); color: var(--roxo); }
+  .estado.espera { background: var(--creme); color: #A35F00; border: 1px solid #FFD98A; }
+  .estado.talvez { background: #EFEDF1; color: var(--suave); border: 1px solid var(--linha); }
+  .caminho { display: inline-block; background: var(--fundo); border: 1px solid var(--linha); border-radius: 5px;
+             padding: 3px 10px; margin: 0.6mm 0 1.6mm; font-size: 9pt; }
+  .caminho b { color: var(--roxo); }
+  ul.lista { margin: 1mm 0 2mm; padding-left: 0; list-style: none; }
+  ul.lista li { position: relative; padding-left: 15px; margin: 0.9mm 0; }
+  ul.lista li::before { content: ""; position: absolute; left: 2px; top: 0.62em; width: 6px; height: 6px; border-radius: 50%; background: var(--roxo); }
+  ul.lista li.amb::before { background: var(--ambar); }
+
+  .caixa { border-left: 3px solid var(--ambar); background: var(--creme); border-radius: 0 6px 6px 0;
+           padding: 2.6mm 4mm; margin: 2mm 0 0.5mm; font-size: 9pt; }
+  .caixa.roxa { border-left-color: var(--roxo); background: var(--lilas); }
+  .caixa p { margin: 0 0 1mm; } .caixa p:last-child { margin: 0; }
+
+  .ficha { background: var(--fundo); border: 1px solid var(--linha); border-radius: 6px; padding: 2.4mm 4mm; margin: 1.4mm 0 2mm; }
+  .ficha .l { display: grid; grid-template-columns: 30mm 1fr; gap: 10px; padding: 1mm 0; font-size: 8.8pt; }
+  .ficha .l + .l { border-top: 1px dashed var(--linha); }
+  .ficha .k { color: var(--suave); font-weight: 500; }
+  .ficha .v { font-family: Consolas, "Cascadia Mono", monospace; color: var(--roxo); font-size: 8.6pt; word-break: break-all; }
+
+  table.perm { width: 100%; border-collapse: collapse; margin: 1.6mm 0 2mm; font-size: 8.8pt; }
+  table.perm td { padding: 1.5mm 2mm; border-bottom: 1px solid var(--linha); vertical-align: top; }
+  table.perm td:first-child { width: 62mm; white-space: nowrap; }
+  table.perm tr:last-child td { border-bottom: 0; }
+
+  /* resumo da página 2 */
+  .resumo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; margin: 4mm 0 1.5mm; }
+  .resumo .it { background: var(--fundo); border: 1px solid var(--linha); border-radius: 8px; padding: 2.8mm 3.6mm; }
+  .resumo .it .n { font-size: 7pt; letter-spacing: 0.24em; color: var(--cinza); font-weight: 600; }
+  .resumo .it .t { font-weight: 600; color: var(--tinta); font-size: 10pt; margin: 1mm 0 0.6mm; line-height: 1.3; }
+  .resumo .it .d { font-size: 8.4pt; color: var(--suave); line-height: 1.45; }
+  .legenda { display: flex; gap: 6mm; align-items: center; font-size: 8.2pt; color: var(--suave); margin: 2mm 0 1mm; }
+  .legenda span { display: inline-flex; align-items: center; gap: 6px; }
+
+  /* anexo A */
+  .colunas { display: grid; grid-template-columns: 1fr 1.25fr 1fr; gap: 0; margin-top: 5mm; border-radius: 8px; overflow: hidden; border: 1px solid var(--linha); }
+  .colunas .c h4 { margin: 0; padding: 2.6mm 4mm; color: #fff; font-size: 7.2pt; letter-spacing: 0.22em; font-weight: 700; text-transform: uppercase; }
+  .colunas .c:nth-child(1) h4 { background: var(--roxo); }
+  .colunas .c:nth-child(2) h4 { background: linear-gradient(90deg, var(--ambar), var(--laranja)); color: var(--tinta); }
+  .colunas .c:nth-child(3) h4 { background: var(--ameixa); }
+  .colunas .c + .c { border-left: 1px solid var(--linha); }
+  .colunas ul { list-style: none; margin: 0; padding: 1mm 4mm 3mm; }
+  .colunas li { padding: 2mm 0; border-bottom: 1px solid var(--linha); font-size: 8.8pt; line-height: 1.45; }
+  .colunas li:last-child { border-bottom: 0; }
+  .colunas li small { display: block; color: var(--cinza); font-size: 7.8pt; margin-top: 0.5mm; }
+
+  .sub { font-size: 7.2pt; letter-spacing: 0.24em; color: var(--suave); font-weight: 700; text-transform: uppercase;
+         margin: 6mm 0 1mm; padding-bottom: 2mm; border-bottom: 1px solid var(--linha); }
+  .peg h4 { margin: 3mm 0 0.8mm; font-size: 10.4pt; font-weight: 600; color: var(--tinta); }
+  .peg p { margin: 0 0 2.6mm; color: var(--suave); padding-bottom: 2.6mm; border-bottom: 1px solid var(--linha); }
+  .peg p:last-child { border-bottom: 0; }
+
+  /* capa */
+  .capa { background: linear-gradient(140deg, #8013A8 0%, #741F95 48%, #6E327C 100%); color: #fff; padding: 0; }
+  .capa .aro { position: absolute; border-radius: 50%; }
+  .capa .conteudo { position: absolute; left: 18mm; right: 18mm; top: 92mm; }
+  .capa h1 { font-size: 35pt; line-height: 1.06; margin: 9mm 0 0; font-weight: 700; letter-spacing: -0.03em; color: #fff; }
+  .capa h1 em { font-style: normal; color: var(--ambar); }
+  .capa .traco { width: 30mm; height: 4px; background: var(--ambar); border-radius: 3px; margin: 9mm 0 7mm; }
+  .capa .sub-capa { font-size: 12pt; line-height: 1.55; color: rgba(255,255,255,0.86); max-width: 130mm; margin: 0; }
+  .capa .meta { display: grid; grid-template-columns: repeat(4, auto); gap: 9mm; margin-top: 16mm; justify-content: start; }
+  .capa .meta .k { font-size: 6.6pt; letter-spacing: 0.26em; color: rgba(255,255,255,0.55); text-transform: uppercase; }
+  .capa .meta .v { font-size: 9.4pt; font-weight: 600; margin-top: 1.6mm; }
+  .capa .versao { position: absolute; left: 18mm; bottom: 16mm; font-size: 8pt; color: rgba(255,255,255,0.6); letter-spacing: 0.04em; }
+
+  /* antes de começar: acessos */
+  table.acessos { width: 100%; border-collapse: collapse; margin: 1mm 0 0; }
+  table.acessos td { padding: 1.6mm 2mm; border-bottom: 1px solid var(--linha); vertical-align: top; font-size: 8.8pt; line-height: 1.45; }
+  table.acessos tr:last-child td { border-bottom: 0; }
+  table.acessos td.i { width: 9mm; padding-left: 0; }
+  table.acessos td.i span { display: inline-flex; width: 21px; height: 21px; border-radius: 50%; align-items: center; justify-content: center;
+       background: var(--lilas); color: var(--roxo); font-weight: 700; font-size: 8pt; }
+  table.acessos.cliente td.i span { background: var(--creme); color: #A35F00; }
+  table.acessos td.o { width: 66mm; }
+  table.acessos td.o b { display: block; font-size: 9.4pt; }
+  table.acessos td.o small { color: var(--cinza); font-size: 7.8pt; }
+  table.acessos td.d { color: var(--suave); }
+  table.acessos td.p { width: 17mm; text-align: right; color: var(--roxo); font-weight: 600; font-size: 8pt; white-space: nowrap; }
+  .nao { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3.5mm; margin-top: 2mm; }
+  .nao div { background: var(--fundo); border: 1px solid var(--linha); border-radius: 8px; padding: 2.6mm 3.4mm; font-size: 8.4pt; color: var(--suave); line-height: 1.45; }
+  .nao div b { display: block; color: var(--tinta); font-size: 9pt; margin-bottom: 0.6mm; }
+</style>
+</head>
+<body>
+
+<!-- símbolos reaproveitados -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="gR" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8013A8"/><stop offset="1" stop-color="#6E327C"/></linearGradient>
+    <linearGradient id="gL" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFAB00"/><stop offset="1" stop-color="#FB7601"/></linearGradient>
+    <symbol id="nix" viewBox="0 0 873.4 806.4">
+      <circle cx="400" cy="406.4" r="322.46" fill="none" stroke="url(#gR)" stroke-width="155.08"/>
+      <circle cx="400" cy="406.4" r="82.92" fill="url(#gR)"/>
+      <circle cx="728.44" cy="144.92" r="144.96" fill="url(#gL)"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- ============================== 1 · CAPA ============================== -->
+<section class="page capa">
+  <div class="aro" style="width:170mm;height:170mm;right:-62mm;top:-58mm;border:30mm solid rgba(255,255,255,0.08)"></div>
+  <div class="aro" style="width:32mm;height:32mm;right:42mm;top:12mm;background:rgba(255,255,255,0.10)"></div>
+  <div class="aro" style="width:44mm;height:44mm;right:-14mm;top:-14mm;background:rgba(251,118,1,0.30)"></div>
+
+  <div class="conteudo">
+    <svg viewBox="0 0 873.4 806.4" style="width:27mm;height:25mm">
+      <circle cx="400" cy="406.4" r="322.46" fill="none" stroke="#fff" stroke-width="155.08"/>
+      <circle cx="400" cy="406.4" r="82.92" fill="#fff"/>
+      <circle cx="728.44" cy="144.92" r="144.96" fill="url(#gL)"/>
+    </svg>
+    <h1>Conectar a API do<br>Instagram ao<br><em>Gestor</em></h1>
+    <div class="traco"></div>
+    <p class="sub-capa">Tudo o que gerar na Meta, uma vez só, para o relatório do gestor puxar o máximo sozinho: conteúdo, audiência, stories e Direct.</p>
+    <div class="meta">
+      <div><div class="k">Parte 1</div><div class="v">Na Meta · uma vez só</div></div>
+      <div><div class="k">Parte 2</div><div class="v">No Instagram · por cliente</div></div>
+      <div><div class="k">Parte 3</div><div class="v">No Gestor · por cliente</div></div>
+      <div><div class="k">Tempo</div><div class="v">~30 minutos</div></div>
+    </div>
+  </div>
+  <div class="versao">Versão 3 · novembro de 2026</div>
+</section>
+
+<!-- ============================== 2 · ANTES DE COMEÇAR ============================== -->
+<section class="page">
+  <div class="cab"><div class="marca"><svg><use href="#nix"/></svg>NIX Gestor</div><div class="rotulo">Conectar a API</div></div>
+  <div class="parte"><span class="tag">ANTES</span><h2>O que você precisa ter em mãos</h2></div>
+
+  <div class="sub" style="margin-top:3mm">Da NIX · uma vez só</div>
+  <table class="acessos">
+    <tr><td class="i"><span>1</span></td><td class="o"><b>Conta pessoal do Facebook</b><small>de quem vai administrar o app</small></td>
+        <td class="d">É só a identidade de desenvolvedor, não precisa ser da empresa. Cadastre-a em <b>developers.facebook.com</b> → <b>Começar</b>, confirmando telefone e e-mail.</td><td class="p">passos 1–7</td></tr>
+    <tr><td class="i"><span>2</span></td><td class="o"><b>Portfólio empresarial da NIX</b><small>business.facebook.com · obrigatório</small></td>
+        <td class="d">O login unificado só existe com o app dentro de um portfólio. Conectar não pede verificação: ela só entra no passo 7, se for preciso, e aí pede CNPJ, endereço, telefone, um documento e o site.</td><td class="p">passos 1, 2 e 7</td></tr>
+    <tr><td class="i"><span>3</span></td><td class="o"><b>Vercel, projeto nix-gestor</b><small>permissão para editar as variáveis</small></td>
+        <td class="d">Para cadastrar o ID, a chave secreta e a configuração do app, e a senha do webhook.</td><td class="p">passos 5 e 6</td></tr>
+    <tr><td class="i"><span>4</span></td><td class="o"><b>Gestor, login de administrador</b><small>nix-gestor.vercel.app</small></td>
+        <td class="d">Para conectar as contas e gerar os relatórios.</td><td class="p">passos 11–13</td></tr>
+    <tr><td class="i"><span>5</span></td><td class="o"><b>Instagram da @agencianix</b><small>usuário, senha e código de duas etapas</small></td>
+        <td class="d">É a primeira conta a conectar: funciona sem revisão da Meta e valida o fluxo inteiro.</td><td class="p">passos 8–11</td></tr>
+  </table>
+
+  <div class="sub">De cada conta de cliente · quem faz é a equipe da NIX</div>
+  <table class="acessos cliente">
+    <tr><td class="i"><span>6</span></td><td class="o"><b>Login do Instagram do cliente</b><small>usuário, senha e código de duas etapas, o mesmo que a NIX usa para postar</small></td>
+        <td class="d">Ou o Facebook de alguém com acesso ao portfólio do cliente. Ser só colaborador da conta não serve. Se o código de duas etapas chega no celular do cliente, combine o horário.</td><td class="p">passo 11</td></tr>
+    <tr><td class="i"><span>7</span></td><td class="o"><b>Conta profissional, pública e num portfólio</b><small>Empresa ou Criador de conteúdo</small></td>
+        <td class="d">Conta pessoal ou privada não aparece. No login, a Meta pede o portfólio empresarial dono da conta; quem anuncia pelo Business Suite já tem.</td><td class="p">passo 8</td></tr>
+    <tr><td class="i"><span>8</span></td><td class="o"><b>Acesso às mensagens liberado</b><small>no app do Instagram do cliente</small></td>
+        <td class="d">Sem isso a conta conecta, mas o Direct não chega ao gestor.</td><td class="p">passo 9</td></tr>
+    <tr><td class="i"><span>9</span></td><td class="o"><b>Conta adicionada como testadora</b><small>uma vez por conta</small></td>
+        <td class="d">A NIX adiciona no app e aceita o convite logada no Instagram do cliente. É o que deixa o app ler a conta sem a aprovação da Meta.</td><td class="p">passo 10</td></tr>
+  </table>
+
+  <div class="sub">Não precisa</div>
+  <div class="nao">
+    <div><b>Página do Facebook</b>Nem vinculada ao Instagram, nem da NIX, nem do cliente. O login unificado dispensa.</div>
+    <div><b>Cliente no gestor</b>O gestor é só da equipe da NIX. O cliente não recebe acesso: recebe o PDF.</div>
+    <div><b>Cartão de crédito</b>A API da Meta é gratuita, e o gestor já está no ar.</div>
+  </div>
+
+  <div class="caixa" style="margin-top:3mm"><b>Se o passo 7 for necessário, confira o site antes.</b> Em 19/11/2026 o agencianix.com.br estava fora do ar (o endereço nem é encontrado), e a verificação da empresa na Meta pede um site funcionando.</div>
+
+  <div class="rod"><div class="marca"><svg><use href="#nix"/></svg>Agência NIX · Conectar a API do Instagram ao Gestor</div><div class="rotulo">Antes de começar</div></div>
+</section>
+
+<!-- ============================== 3 · PARTE 1 (1–2) ============================== -->
+<section class="page">
+  <div class="cab"><div class="marca"><svg><use href="#nix"/></svg>NIX Gestor</div><div class="rotulo">Conectar a API</div></div>
+
+  <div class="parte"><span class="tag">PARTE 1</span><h2>Na Meta</h2><span class="nota">uma vez só</span></div>
+
+  <div class="resumo">
+    <div class="it"><div class="n">VOCÊ SAI COM</div><div class="t">Um app só, da NIX</div><div class="d">Todas as contas de cliente se conectam nele.</div></div>
+    <div class="it"><div class="n">VOCÊ SAI COM</div><div class="t">Uma configuração de login</div><div class="d">Seis permissões e um token que não vence.</div></div>
+    <div class="it"><div class="n">VOCÊ SAI COM</div><div class="t">Webhook ligado</div><div class="d">A Meta avisa o gestor de cada mensagem do Direct.</div></div>
+  </div>
+  <div class="legenda">
+    <span><span class="estado ja">Faça já</span> funciona hoje</span>
+    <span><span class="estado espera">Espere o aviso</span> depende da atualização do gestor</span>
+  </div>
+
+  <div class="passo"><div class="num">1</div><div>
+    <h3>Crie o app <span class="estado ja">Faça já</span></h3>
+    <p>Em <b>developers.facebook.com/apps</b> → <b>Criar app</b>. São cinco telas:</p>
+    <ul class="lista">
+      <li><b>Detalhes do app:</b> nome <b>NIX Gestor</b> e o e-mail da agência.</li>
+      <li><b>Casos de uso:</b> no filtro da esquerda, clique em <b>Tudo</b> e marque <b>Gerenciar mensagens e conteúdo no Instagram</b>. Ele não aparece em "Em destaque".</li>
+      <li><b>Empresa:</b> escolha o portfólio empresarial da NIX. Se pular, a Meta pede de novo no passo 2.</li>
+      <li><b>Requisitos:</b> é só leitura. <b>Avançar</b>.</li>
+      <li><b>Visão geral:</b> confira e clique em <b>Criar aplicativo</b>. A Meta pode pedir a senha do Facebook.</li>
+    </ul>
+    <div class="caixa"><b>Um app só, com o nome da agência.</b> Todas as contas de cliente se conectam a ele, e o nome aparece na tela de login de cada uma. Para trocar depois: <b>Configurações do app → Básico</b>.</div>
+  </div></div>
+
+  <div class="passo"><div class="num">2</div><div>
+    <h3>Abra o login unificado <span class="estado ja">Faça já</span></h3>
+    <p>No painel do app:</p>
+    <div class="caminho">Casos de uso → Gerenciar mensagens e conteúdo no Instagram → Personalizar → <b>API setup with Unified login</b></div>
+    <p>Se aparecer o aviso de que o portfólio é obrigatório, clique em <b>+ Portfólio empresarial</b> e escolha o da NIX. Conectar não pede verificação da empresa.</p>
+    <div class="caixa roxa">Para apps novos, a Meta não oferece mais o login do Instagram: o aviso aparece no topo da página. Também não use <b>Configuração da API com login do Facebook</b>, que está obsoleta e exige Página vinculada.</div>
+  </div></div>
+
+  <div class="rod"><div class="marca"><svg><use href="#nix"/></svg>Agência NIX · Conectar a API do Instagram ao Gestor</div><div class="rotulo">Parte 1 de 3</div></div>
+</section>
+
+<!-- ============================== 4 · PARTE 1 (3–5) ============================== -->
+<section class="page">
+  <div class="cab"><div class="marca"><svg><use href="#nix"/></svg>NIX Gestor</div><div class="rotulo">Conectar a API</div></div>
+  <div class="parte"><span class="tag">PARTE 1</span><h2>Na Meta</h2><span class="nota">continuação</span></div>
+
+  <div class="passo"><div class="num">3</div><div>
+    <h3>Crie a configuração de login <span class="estado ja">Faça já</span></h3>
+    <p>Seção <b>1. Configure seu app</b> → <b>Criar nova configuração</b> → <b>Criar do modelo</b>. Depois, em <b>Editar permissões</b>, deixe exatamente estas seis:</p>
+    <table class="perm">
+      <tr><td><code>instagram_basic</code></td><td>Perfil, seguidores e a lista de posts</td></tr>
+      <tr><td><code>instagram_manage_insights</code></td><td>Alcance, visualizações, demografia, horários e stories. <b>Não vem no modelo: marque.</b></td></tr>
+      <tr><td><code>instagram_manage_messages</code></td><td>Direct: conversas, mensagens recebidas e reações</td></tr>
+      <tr><td><code>instagram_manage_comments</code></td><td>Comentários e menções</td></tr>
+      <tr><td><code>instagram_content_publish</code></td><td>Publicação automática a partir do gestor</td></tr>
+      <tr><td><code>ads_read</code></td><td>Números de anúncios, para um slide futuro</td></tr>
+    </table>
+    <p>Desmarque <code>ads_management</code>: o gestor não cria anúncios. Na prévia, confira <b>Token de acesso do usuário do sistema</b> com expiração <b>Nunca</b>, e anote a <b>Identificação da configuração</b>.</p>
+    <div class="caixa"><b>Confira antes de conectar a primeira conta.</b> Permissão acrescentada depois obriga a reconectar todas as contas.</div>
+  </div></div>
+
+  <div class="passo"><div class="num">4</div><div>
+    <h3>Cadastre o endereço de retorno <span class="estado ja">Faça já</span></h3>
+    <p>Na mesma seção, em <b>URL de redirecionamento</b>, cole o endereço e clique em <b>Salvar</b>. A <b>URL de login</b> aparece embaixo; não precisa copiar, o gestor monta a dele.</p>
+    <div class="ficha"><div class="l"><span class="k">Endereço</span><span class="v">https://nix-gestor.vercel.app/api/instagram/callback</span></div></div>
+  </div></div>
+
+  <div class="passo"><div class="num">5</div><div>
+    <h3>Guarde o ID, a chave e a configuração na Vercel <span class="estado ja">Faça já</span></h3>
+    <p>Em <b>Configurações do app</b> (engrenagem no menu da esquerda) → <b>Básico</b>, copie o <b>ID do app</b> e a <b>Chave secreta do app</b> (clique em <b>Mostrar</b>). Cadastre em <b>vercel.com</b> → <b>nix-gestor</b> → <b>Settings</b> → <b>Environment Variables</b>:</p>
+    <div class="ficha">
+      <div class="l"><span class="k">ID do app</span><span class="v">INSTAGRAM_APP_ID</span></div>
+      <div class="l"><span class="k">Chave secreta</span><span class="v">INSTAGRAM_APP_SECRET</span></div>
+      <div class="l"><span class="k">Passo 3</span><span class="v">INSTAGRAM_CONFIG_ID</span></div>
+    </div>
+    <div class="caixa">A chave secreta é a senha do app: não mande por WhatsApp nem cole em documento.</div>
+  </div></div>
+
+  <div class="rod"><div class="marca"><svg><use href="#nix"/></svg>Agência NIX · Conectar a API do Instagram ao Gestor</div><div class="rotulo">Parte 1 de 3</div></div>
+</section>
+
+<!-- ============================== 5 · PARTE 1 (6–7) ============================== -->
+<section class="page">
+  <div class="cab"><div class="marca"><svg><use href="#nix"/></svg>NIX Gestor</div><div class="rotulo">Conectar a API</div></div>
+  <div class="parte"><span class="tag">PARTE 1</span><h2>Na Meta</h2><span class="nota">continuação</span></div>
+
+  <div class="passo"><div class="num">6</div><div>
+    <h3>Ligue o webhook do Direct <span class="estado espera">Espere o aviso</span></h3>
+    <p>Primeiro, na Vercel, crie mais uma variável com qualquer sequência sem espaço (ex.: <span class="mono">nix-webhook-7k2p</span>). É só uma senha de aperto de mão, e o valor tem que ser o mesmo nos dois lugares:</p>
+    <div class="ficha"><div class="l"><span class="k">Nome</span><span class="v">INSTAGRAM_WEBHOOK_VERIFY_TOKEN</span></div></div>
+    <p>Depois, na página do login unificado, seção <b>3. Configurar webhooks</b>:</p>
+    <div class="ficha">
+      <div class="l"><span class="k">URL de callback</span><span class="v">https://nix-gestor.vercel.app/api/instagram/webhook</span></div>
+      <div class="l"><span class="k">Verificação</span><span class="v">o mesmo valor da variável acima</span></div>
+    </div>
+    <p>Verifique, salve e assine os campos <code>messages</code>, <code>message_echoes</code>, <code>message_reactions</code>, <code>messaging_seen</code> e <code>comments</code>. Se aparecer <code>story_insights</code>, marque também: são os números de cada story quando ele sai do ar.</p>
+    <div class="caixa"><b>Faça este passo só depois do aviso.</b> A Meta testa o endereço na hora de salvar, e ele entra no ar com a atualização do gestor. O Direct conta a partir daqui: o que chegou antes não volta pela API.</div>
+  </div></div>
+
+  <div class="passo"><div class="num">7</div><div>
+    <h3>Aprovação da Meta <span class="estado talvez">Só se precisar</span></h3>
+    <p>O cliente nunca entra no gestor. Esta aprovação é uma regra da Meta para o <b>app da NIX</b> poder ler contas que não têm função nele. Com cada conta de cliente adicionada como testadora (passo 10), os números do relatório já vêm sem ela.</p>
+    <p>Ela só pode ser necessária para o <b>Direct</b>: a Meta diz que os avisos de mensagens exigem o app publicado. O teste com a @agencianix tira a dúvida. Se o Direct não chegar, aí sim:</p>
+    <ul class="lista">
+      <li><b>Verifique a empresa:</b> conclua a verificação do portfólio da NIX, o mesmo do passo 2, em <b>business.facebook.com</b>, com o CNPJ.</li>
+      <li><b>Complete o cadastro</b> em <b>Configurações do app → Básico</b>: ícone, categoria, e-mail, a política de privacidade em <span class="mono" style="color:var(--roxo)">nix-gestor.vercel.app/privacidade</span> e a exclusão de dados em <span class="mono" style="color:var(--roxo)">nix-gestor.vercel.app/api/instagram/exclusao</span>.</li>
+      <li><b>Peça a revisão</b> na seção <b>4. Conclua a análise do app</b>, com uma descrição do uso e um vídeo de tela de cada permissão funcionando.</li>
+    </ul>
+    <div class="caixa roxa"><b>Comece pela @agencianix.</b> Ela é sua, funciona na hora e valida o fluxo inteiro no mesmo dia, inclusive se o Direct chega sem a aprovação.</div>
+  </div></div>
+
+  <div class="rod"><div class="marca"><svg><use href="#nix"/></svg>Agência NIX · Conectar a API do Instagram ao Gestor</div><div class="rotulo">Parte 1 de 3</div></div>
+</section>
+
+<!-- ============================== 5 · PARTES 2 E 3 ============================== -->
+<section class="page">
+  <div class="cab"><div class="marca"><svg><use href="#nix"/></svg>NIX Gestor</div><div class="rotulo">Conectar a API</div></div>
+  <div class="parte"><span class="tag">PARTE 2</span><h2>No Instagram</h2><span class="nota">por cliente · antes do passo 11</span></div>
+
+  <div class="passo"><div class="num">8</div><div>
+    <h3>Conta profissional, pública e num portfólio</h3>
+    <p>No app do Instagram: <b>Configurações e atividade → Tipo de conta e ferramentas → Mudar para conta profissional</b> (Empresa ou Criador). A conta precisa estar pública e dentro de um <b>portfólio empresarial</b>, que a Meta pede no passo 11. Quem anuncia pelo Business Suite já tem.</p>
+  </div></div>
+
+  <div class="passo"><div class="num">9</div><div>
+    <h3>Libere o acesso às mensagens</h3>
+    <div class="caminho">Configurações → Mensagens e respostas aos stories → Controles de mensagens → Ferramentas conectadas → <b>Permitir acesso às mensagens</b></div>
+    <p>Deixe ligado. Sem isso, a conta aparece como conectada, mas o Direct não chega ao gestor.</p>
+  </div></div>
+
+  <div class="passo"><div class="num">10</div><div>
+    <h3>Adicione a conta como testadora do app</h3>
+    <p>Em <b>Funções do app → Funções → Testadores do Instagram</b>, adicione o @ da conta. Depois, logado no Instagram do cliente pelo navegador, aceite em <b>instagram.com/accounts/manage_access</b> → <b>Convites de testador</b>. É uma vez por conta.</p>
+  </div></div>
+
+  <div class="parte" style="border-top:1px solid var(--linha)"><span class="tag">PARTE 3</span><h2>No Gestor</h2><span class="nota">por cliente</span></div>
+
+  <div class="passo"><div class="num">11</div><div>
+    <h3>Conecte a conta <span class="estado espera">Espere o aviso</span></h3>
+    <div class="caminho">Projeto do cliente → <b>Relatório</b> → cartão <b>Conta do Instagram</b> → <b>Conectar com Instagram</b></div>
+    <p>Entre com o Instagram do cliente (ou o Facebook de quem acessa o portfólio dele), escolha o portfólio e a conta → <b>Permitir</b>. Aparece <b>Conectado como @conta</b>. O botão chega com a atualização.</p>
+  </div></div>
+
+  <div class="passo"><div class="num">12</div><div>
+    <h3>Gere o relatório do mês</h3>
+    <p><b>Novo relatório</b> → mês → <b>Criar</b> → <b>Importar da API</b> → <b>Editar</b> só o que ficou em branco → <b>Salvar</b>. Reimportar é seguro: só é sobrescrito o campo que veio com valor.</p>
+    <div class="caixa">Gere a partir do <b>dia 3</b> do mês seguinte: a Meta leva até 48 h para fechar os números.</div>
+  </div></div>
+
+  <div class="passo"><div class="num">13</div><div>
+    <h3>Exporte o PDF</h3>
+    <p>Clique em <b>Apresentar</b> e depois em <b>Baixar PDF</b>. Na janela de impressão, marque <b>Gráficos de fundo</b>. Sem isso, os slides roxos saem brancos com texto branco.</p>
+  </div></div>
+
+  <div class="rod"><div class="marca"><svg><use href="#nix"/></svg>Agência NIX · Conectar a API do Instagram ao Gestor</div><div class="rotulo">Partes 2 e 3 de 3</div></div>
+</section>
+
+<!-- ============================== 6 · ANEXO A ============================== -->
+<section class="page">
+  <div class="cab"><div class="marca"><svg><use href="#nix"/></svg>NIX Gestor</div><div class="rotulo">Referência</div></div>
+  <div class="parte"><span class="tag">ANEXO A</span><h2>O que o relatório puxa sozinho</h2></div>
+
+  <div class="colunas">
+    <div class="c"><h4>Já está no relatório</h4><ul>
+      <li>Seguidores, alcance e visualizações</li>
+      <li>Posts, feeds e reels do mês</li>
+      <li>Curtidas, comentários, compartilhamentos, salvos e interações</li>
+      <li>Média de visualização dos reels</li>
+      <li>Idade, cidade e gênero do público<small>em contas com 100+ seguidores</small></li>
+    </ul></div>
+    <div class="c"><h4>Vem com a atualização</h4><ul>
+      <li>Os 3 melhores e os 2 piores posts, com a imagem</li>
+      <li>Comparativo do ano<small>a Meta guarda 2 anos: os meses anteriores vêm na hora</small></li>
+      <li>Seguidores ganhos e perdidos, contas engajadas e cliques no link do perfil</li>
+      <li>Frequência de exibição e taxa de engajamento, já calculadas</li>
+      <li>Tempo médio assistido dos reels</li>
+      <li>Curva de horários<small>últimos 30 dias; confirmada na primeira conexão</small></li>
+      <li>Stories<small>coletados de hora em hora enquanto estão no ar</small></li>
+      <li>Direct: volume por dia e hora, mapa da semana, recordes, tempo de resposta, conversas sem resposta, temas e emojis</li>
+      <li>Rascunho da conclusão a partir dos números</li>
+    </ul></div>
+    <div class="c"><h4>Não existe na API</h4><ul>
+      <li>Direct anterior à conexão<small>só pelo arquivo exportado do Instagram, enviado uma vez</small></li>
+      <li>Stories anteriores à conexão<small>a Meta apaga os números em 24 h</small></li>
+      <li>Demografia de conta com menos de 100 seguidores</li>
+      <li>A palavra final da conclusão<small>o rascunho vem pronto; a revisão é sua</small></li>
+    </ul></div>
+  </div>
+
+  <div class="caixa roxa" style="margin-top:6mm"><b>Por que conectar cedo.</b> Tudo o que é número de conta e de post a Meta guarda por dois anos, então pode ser buscado a qualquer momento. Stories e Direct, não: eles só existem para o gestor a partir do dia em que a conta é conectada. Quanto antes cada cliente estiver ligado, mais completo fica o primeiro relatório.</div>
+
+  <div class="rod"><div class="marca"><svg><use href="#nix"/></svg>Agência NIX · Conectar a API do Instagram ao Gestor</div><div class="rotulo">Anexo A</div></div>
+</section>
+
+<!-- ============================== 7 · ANEXO B ============================== -->
+<section class="page">
+  <div class="cab"><div class="marca"><svg><use href="#nix"/></svg>NIX Gestor</div><div class="rotulo">Referência</div></div>
+  <div class="parte"><span class="tag">ANEXO B</span><h2>Para copiar</h2></div>
+
+  <div class="sub">Variáveis na Vercel · nix-gestor → Settings → Environment Variables</div>
+  <div class="ficha">
+    <div class="l"><span class="k">Passo 5</span><span class="v">INSTAGRAM_APP_ID</span></div>
+    <div class="l"><span class="k">Passo 5</span><span class="v">INSTAGRAM_APP_SECRET</span></div>
+    <div class="l"><span class="k">Passo 5</span><span class="v">INSTAGRAM_CONFIG_ID</span></div>
+    <div class="l"><span class="k">Passo 6</span><span class="v">INSTAGRAM_WEBHOOK_VERIFY_TOKEN</span></div>
+  </div>
+
+  <div class="sub">Endereços no painel da Meta</div>
+  <div class="ficha">
+    <div class="l"><span class="k">Retorno · 4</span><span class="v">https://nix-gestor.vercel.app/api/instagram/callback</span></div>
+    <div class="l"><span class="k">Webhook · 6</span><span class="v">https://nix-gestor.vercel.app/api/instagram/webhook</span></div>
+    <div class="l"><span class="k">Privacidade · 7</span><span class="v">https://nix-gestor.vercel.app/privacidade</span></div>
+    <div class="l"><span class="k">Exclusão · 7</span><span class="v">https://nix-gestor.vercel.app/api/instagram/exclusao</span></div>
+  </div>
+
+  <div class="sub">O que pode te pegar</div>
+  <div class="peg">
+    <h4>Configuração sem uma das permissões</h4>
+    <p>O gestor conecta, mas a parte correspondente volta vazia, e a mensagem da Meta diz qual permissão faltou. Acrescente-a em <b>Editar permissões</b> (passo 3) e conecte a conta de novo.</p>
+    <h4>Conexão que para de funcionar</h4>
+    <p>O token não vence, mas cai se o app for removido do portfólio do cliente ou se o Instagram mudar de portfólio. Basta conectar de novo. Se a conta nem aparece no login, ela é pessoal ou está em outro portfólio.</p>
+    <h4>Mensagens bloqueadas no Instagram do cliente</h4>
+    <p>Se o passo 9 ficar desligado, a conta aparece como conectada e o Direct fica zerado. É a primeira coisa a conferir quando o Direct não se mexe.</p>
+    <h4>Mês em curso ou recém-fechado</h4>
+    <p>Os números podem levar até 48 h para fechar. Um relatório gerado no dia 1 sai com o último dia incompleto.</p>
+  </div>
+
+  <div class="caixa roxa" style="margin-top:3mm"><b>Sobre o Direct guardado.</b> O gestor classifica cada mensagem assim que ela chega (tema, emoji, se é pergunta) e guarda só a classificação e o horário, não o texto. O relatório sai completo sem o gestor virar um arquivo das conversas dos seguidores do cliente.</div>
+
+  <div class="rod"><div class="marca"><svg><use href="#nix"/></svg>Agência NIX · Conectar a API do Instagram ao Gestor</div><div class="rotulo">Anexo B</div></div>
+</section>
+
+</body>
+</html>
