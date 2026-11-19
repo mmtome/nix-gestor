@@ -103,6 +103,38 @@ function Slide({
   );
 }
 
+/**
+ * O ano em pé, como marca d'água das capas. Cada algarismo tem posição fixa
+ * num SVG: empilhar spans com entrelinha apertada dependia da métrica da
+ * fonte, e em algumas telas e na impressão os números se sobrepunham.
+ */
+function AnoVertical({ ano, className, opacidade }: { ano: number; className: string; opacidade: number }) {
+  const digitos = String(ano).split("");
+  const PASSO = 96;
+  return (
+    <svg
+      aria-hidden
+      viewBox={`0 0 64 ${digitos.length * PASSO}`}
+      className={`pointer-events-none absolute top-1/2 h-[40em] -translate-y-1/2 overflow-visible ${className}`}
+    >
+      {digitos.map((n, i) => (
+        <text
+          key={i}
+          x="32"
+          y={(i + 1) * PASSO - 10}
+          textAnchor="middle"
+          fontSize="104"
+          className="deck-display"
+          fill="#fff"
+          fillOpacity={opacidade}
+        >
+          {n}
+        </text>
+      ))}
+    </svg>
+  );
+}
+
 function Titulo({ children, claro = false }: { children: React.ReactNode; claro?: boolean }) {
   return (
     <h2
@@ -263,16 +295,7 @@ export function Deck({ d }: { d: DadosDeck }) {
     <div className="deck">
       {/* 01 — Capa ------------------------------------------------------- */}
       <Slide variante="roxo">
-        <div
-          aria-hidden
-          className="deck-display pointer-events-none absolute right-[1.4em] top-1/2 flex -translate-y-1/2 flex-col text-[11em] leading-[0.78] text-white/[0.13]"
-        >
-          {String(d.ano)
-            .split("")
-            .map((n, i) => (
-              <span key={i}>{n}</span>
-            ))}
-        </div>
+        <AnoVertical ano={d.ano} className="right-[9em]" opacidade={0.13} />
         <div className="relative flex h-full flex-col justify-center px-[6em]">
           <svg viewBox="0 0 873.4 806.4" className="h-[5.4em] w-[5.4em]" aria-hidden="true">
             <circle cx="400" cy="406.4" r="322.46" fill="none" stroke="#fff" strokeWidth="155.08" />
@@ -351,7 +374,8 @@ export function Deck({ d }: { d: DadosDeck }) {
                   partes={[
                     { rotulo: "Feeds", valor: d.feeds },
                     { rotulo: "Reels", valor: d.reels },
-                    { rotulo: "Stories", valor: d.stories },
+                    // Stories só entram quando alguém preencheu: a API não os guarda.
+                    ...(d.stories ? [{ rotulo: "Stories", valor: d.stories }] : []),
                   ]}
                 />
               </div>
@@ -363,7 +387,10 @@ export function Deck({ d }: { d: DadosDeck }) {
                 rotulo="Taxa de engajamento do perfil"
                 valor={porcento(d.taxaEngajamento)}
               />
-              <Metrica rotulo="Média de visualização · stories" valor={numero(d.mediaViewStories)} />
+              <Metrica
+                rotulo="Média de visualização · stories"
+                valor={d.mediaViewStories ? numero(d.mediaViewStories) : "—"}
+              />
             </div>
 
             <div className="flex flex-col justify-between">
@@ -528,16 +555,7 @@ export function Deck({ d }: { d: DadosDeck }) {
 
       {/* 11 — Obrigado ---------------------------------------------------- */}
       <Slide variante="roxo">
-        <div
-          aria-hidden
-          className="deck-display pointer-events-none absolute left-[1.4em] top-1/2 flex -translate-y-1/2 flex-col text-[11em] leading-[0.78] text-white/[0.10]"
-        >
-          {String(d.ano)
-            .split("")
-            .map((n, i) => (
-              <span key={i}>{n}</span>
-            ))}
-        </div>
+        <AnoVertical ano={d.ano} className="left-[13em]" opacidade={0.1} />
         <div className="relative flex h-full flex-col items-center justify-center">
           <svg viewBox="0 0 873.4 806.4" className="h-[6.5em] w-[6.5em]" aria-hidden="true">
             <circle cx="400" cy="406.4" r="322.46" fill="none" stroke="#fff" strokeWidth="155.08" />
