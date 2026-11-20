@@ -7,7 +7,7 @@ import { GRAPH, decifrar } from "@/lib/meta";
 /* TEMPORÁRIO — diagnóstico do que a API de mensagens devolve para a conta do
    projeto. Só contagens e mensagens de erro; nenhum texto de conversa. */
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 type Resposta = { data?: { id: string; updated_time?: string }[]; paging?: { next?: string } };
 
@@ -38,6 +38,7 @@ export async function GET(req: Request) {
     const sep = caminho.includes("?") ? "&" : "?";
     const res = await fetch(`${GRAPH}/${caminho}${sep}access_token=${encodeURIComponent(token)}`, {
       cache: "no-store",
+      signal: AbortSignal.timeout(12_000),
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -55,6 +56,7 @@ export async function GET(req: Request) {
   };
 
   const relato: Record<string, unknown> = { conta: conta.username };
+  const inicio = Date.now();
 
   const lista = [
     `${ig}/conversations?platform=instagram&fields=id,updated_time&limit=50`,
@@ -78,7 +80,7 @@ export async function GET(req: Request) {
     if (!r.ok) continue;
     let pag = r.v as Resposta;
     const achadas = [...(pag.data ?? [])];
-    for (let i = 0; i < 6 && pag.paging?.next; i++) {
+    for (let i = 0; i < 3 && pag.paging?.next; i++) {
       const prox = new URL(pag.paging.next);
       prox.searchParams.delete("access_token");
       const r2 = await tentar(prox.pathname.replace(/^\/v[\d.]+\//, "") + prox.search);
@@ -96,7 +98,7 @@ export async function GET(req: Request) {
     const datas = conversas.map((c) => c.updated_time).filter(Boolean).sort();
     relato.atualizadas = { de: datas[0], ate: datas.at(-1) };
     const amostra: Record<string, unknown>[] = [];
-    for (const c of conversas.slice(0, 4)) {
+    for (const c of conversas.slice(0, 3)) {
       const ids = await tentar(`${c.id}?fields=messages.limit(100){id,created_time}`);
       const det = await tentar(`${c.id}?fields=messages.limit(30){id,created_time,from,to,message}`);
       const extra = await tentar(
@@ -115,5 +117,6 @@ export async function GET(req: Request) {
     relato.amostra = amostra;
   }
 
+  relato.segundos = Math.round((Date.now() - inicio) / 1000);
   return NextResponse.json(relato);
 }
