@@ -383,12 +383,15 @@ export function resumirDirect(conversas: ConversaBruta[], dono: string) {
     if (!msgs.length) continue;
     ultima = Math.max(ultima, msgs.at(-1)!.ts);
 
+    // Conversa que é só menção em story ou reação não conta como iniciada.
     const reais = msgs.filter((m) => m.tipo === "mensagem");
-    const primeira = reais[0] ?? msgs[0];
-    const inicio = mes(primeira.ts);
-    inicio.iniciadas++;
-    if (primeira.autor !== dono) inicio.iniciadasPeloPublico++;
-    if (c.pasta === "message_requests") inicio.solicitacoes++;
+    const primeira = reais[0];
+    if (primeira) {
+      const inicio = mes(primeira.ts);
+      inicio.iniciadas++;
+      if (primeira.autor !== dono) inicio.iniciadasPeloPublico++;
+      if (c.pasta === "message_requests") inicio.solicitacoes++;
+    }
 
     // Por mês desta conversa: tamanho e a primeira mensagem do público.
     const daConversa = new Map<string, { total: number; primeiraDoPublico: number | null }>();

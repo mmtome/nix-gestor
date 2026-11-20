@@ -385,9 +385,12 @@ export async function coletarDirectTodos() {
   for (const c of contas) {
     try {
       const r = await coletarDirectDaConta(c);
-      // O mês corrente sempre: "sem resposta" muda mesmo sem mensagem nova.
+      // O mês corrente e o anterior sempre: "sem resposta" e tempo de
+      // resposta mudam quando a conta responde, mesmo dias depois.
       const agora = new Date(Date.now() - 3 * 3600_000);
-      const meses = [...r.meses, { ano: agora.getUTCFullYear(), mes: agora.getUTCMonth() + 1 }];
+      const ano = agora.getUTCFullYear();
+      const mes = agora.getUTCMonth() + 1;
+      const meses = [...r.meses, { ano, mes }, mes === 1 ? { ano: ano - 1, mes: 12 } : { ano, mes: mes - 1 }];
       const feitos = new Set<string>();
       for (const m of meses) {
         const k = `${m.ano}-${m.mes}`;
