@@ -1,7 +1,8 @@
-# Coleta os stories das contas conectadas de hora em hora.
-# A Meta apaga os números de um story 24 h depois de publicado, e o cron da
-# Vercel (plano Hobby) só roda uma vez por dia. Ver src/app/api/cron/stories.
-name: Coletar stories
+# Coleta os stories e o Direct das contas conectadas de hora em hora.
+# A Meta apaga os números de um story 24 h depois de publicado e só detalha as
+# 20 últimas mensagens de cada conversa; o cron da Vercel (plano Hobby) só roda
+# uma vez por dia. Ver src/app/api/cron/stories e src/app/api/cron/direct.
+name: Coletar stories e Direct
 
 on:
   schedule:
@@ -11,7 +12,7 @@ on:
 jobs:
   coletar:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 12
     steps:
       - name: Chamar a coleta
         env:
@@ -20,3 +21,12 @@ jobs:
           curl --fail-with-body --silent --show-error --max-time 150 \
             -H "Authorization: Bearer ${CRON_SECRET}" \
             https://nix-gestor.vercel.app/api/cron/stories
+
+      - name: Chamar a coleta do Direct
+        if: always()
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: >-
+          curl --fail-with-body --silent --show-error --max-time 310
+          -H "Authorization: Bearer ${CRON_SECRET}"
+          https://nix-gestor.vercel.app/api/cron/direct

@@ -373,6 +373,8 @@ const variacao = (atual: number, antes: number) => {
  */
 function slidesDirect(dd: DirectDeck, ano: number, mes: number, proximo: () => number) {
   const dm = dd.atual;
+  // Pela API não vêm ligações nem solicitações; o resto é igual ao arquivo.
+  const pelaApi = dm.fonte === "api";
   const mesCurto = MESES_CURTOS[mes - 1].toLowerCase();
   const ate = dm.arquivoAte
     ? new Date(dm.arquivoAte).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })
@@ -407,8 +409,14 @@ function slidesDirect(dd: DirectDeck, ano: number, mes: number, proximo: () => n
           <div className="flex items-end justify-between gap-[2em]">
             <Titulo>Direct</Titulo>
             {ate && (
-              <p className="pb-[0.4em] text-right text-[1.1em] text-[#6E6377]">
-                Arquivo exportado do Instagram, com mensagens até {ate}
+              <p className="max-w-[40em] pb-[0.4em] text-right text-[1.1em] text-[#6E6377]">
+                {pelaApi ? `Coletado da API do Instagram, atualizado em ${ate}` : `Arquivo exportado do Instagram, com mensagens até ${ate}`}
+                {!dm.completo && (
+                  <>
+                    <br />
+                    Mês anterior à coleta de hora em hora: conversas longas podem ter mensagens antigas de fora
+                  </>
+                )}
               </p>
             )}
           </div>
@@ -425,8 +433,8 @@ function slidesDirect(dd: DirectDeck, ano: number, mes: number, proximo: () => n
             />
             <Metrica
               rotulo="Solicitações"
-              valor={numero(dm.solicitacoes)}
-              nota="de mensagem, ainda não aceitas"
+              valor={pelaApi ? "—" : numero(dm.solicitacoes)}
+              nota={pelaApi ? "a API da Meta não informa" : "de mensagem, ainda não aceitas"}
               tom="ambar"
             />
           </div>
@@ -633,8 +641,8 @@ function slidesDirect(dd: DirectDeck, ano: number, mes: number, proximo: () => n
             <Metrica rotulo="Menções em stories" valor={numero(it.mencoesStory)} />
             <Metrica
               rotulo="Ligações"
-              valor={numero(it.ligacoes)}
-              nota={it.minutosLigacao ? `${numero(it.minutosLigacao)} min no total` : undefined}
+              valor={pelaApi ? "—" : numero(it.ligacoes)}
+              nota={pelaApi ? "a API da Meta não informa" : it.minutosLigacao ? `${numero(it.minutosLigacao)} min no total` : undefined}
               tom="ambar"
             />
           </div>
@@ -681,7 +689,9 @@ function slidesDirect(dd: DirectDeck, ano: number, mes: number, proximo: () => n
                     { r: "Mensagens enviadas", a: ant.enviadas, b: dm.enviadas },
                     { r: "Conversas no mês", a: ant.conversas, b: dm.conversas },
                     { r: "Conversas iniciadas", a: ant.iniciadas, b: dm.iniciadas },
-                    { r: "Solicitações", a: ant.solicitacoes, b: dm.solicitacoes },
+                    ...(pelaApi || ant.fonte === "api"
+                      ? []
+                      : [{ r: "Solicitações", a: ant.solicitacoes, b: dm.solicitacoes }]),
                     { r: "Sem resposta", a: ant.semResposta, b: dm.semResposta },
                   ].map((l) => (
                     <div

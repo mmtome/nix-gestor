@@ -11,6 +11,7 @@ import { rascunhoDaConclusao } from "@/lib/conclusao";
 import { comoExtras } from "@/lib/relatorio";
 import { storiesDoMes } from "@/lib/stories";
 import { comoDirect } from "@/lib/direct";
+import { coletarDirectDaConta, recalcularDirect } from "@/lib/directApi";
 
 /* ============================================================================
    Relatório de resultados — criação, edição e importação.
@@ -166,7 +167,14 @@ export async function importarDaApi(id: string) {
 
   const conta = await db.instagramAccount.findUnique({
     where: { projectId: alvo.projectId },
-    select: { igUserId: true, accessToken: true, username: true },
+    select: {
+      igUserId: true,
+      accessToken: true,
+      username: true,
+      directDesde: true,
+      directAte: true,
+      directCursor: true,
+    },
   });
 
   const r = await importarMes(alvo.projectId, conta, alvo.ano, alvo.mes, {
@@ -191,6 +199,35 @@ export async function importarDaApi(id: string) {
     r.avisos.push(`Stories: ${stories.length} coletados enquanto estavam no ar.`);
   }
 
+  // Direct: lê o que chegou desde a última coleta e refaz o mês (e o mesmo
+  // mês do ano anterior, para o comparativo) com as mensagens guardadas.
+  let direct = null;
+  if (conta?.igUserId && conta.accessToken) {
+    try {
+      const c = await coletarDirectDaConta({ projectId: alvo.projectId, ...conta }, 6);
+      direct = await recalcularDirect(alvo.projectId, alvo.ano, alvo.mes);
+      await recalcularDirect(alvo.projectId, alvo.ano - 1, alvo.mes);
+      if (direct) {
+        r.avisos.push(
+          direct.completo
+            ? `Direct: ${direct.recebidas} mensagens recebidas no mês, coletadas pela API.`
+            : `Direct: mês anterior ao início da coleta de hora em hora — vêm as 20 últimas mensagens de cada conversa${
+                c.historico === "lido" ? "" : " (o histórico ainda está sendo lido, a cada hora entra mais)"
+              }.`,
+        );
+      } else {
+        r.avisos.push(
+          c.historico === "lido"
+            ? "Direct: nenhuma mensagem neste mês."
+            : "Direct: o histórico ainda está sendo lido; a coleta de hora em hora chega a este mês em breve.",
+        );
+      }
+      if (c.parou) r.avisos.push(`Direct: a leitura parou no ${c.parou} e continua na próxima hora.`);
+    } catch (e) {
+      r.avisos.push(`Direct: a API recusou a leitura (${e instanceof Error ? e.message : "erro"}).`);
+    }
+  }
+
   // Conclusão vazia ganha um rascunho; a que alguém escreveu fica como está.
   if (!alvo.conclusao?.trim()) {
     const ant = alvo.mes === 1 ? { ano: alvo.ano - 1, mes: 12 } : { ano: alvo.ano, mes: alvo.mes - 1 };
@@ -198,13 +235,16 @@ export async function importarDaApi(id: string) {
       where: { projectId_ano_mes: { projectId: alvo.projectId, ...ant } },
       select: { mes: true, posts: true, visualizacoes: true, alcance: true },
     });
-    const direct = await db.dadosExportados.findUnique({
-      where: {
-        projectId_ano_mes_tipo: { projectId: alvo.projectId, ano: alvo.ano, mes: alvo.mes, tipo: "direct" },
-      },
-      select: { dados: true },
-    });
-    const rascunho = rascunhoDaConclusao({ mes: alvo.mes, ...r.dados }, anterior, comoDirect(direct?.dados));
+    if (!direct) {
+      const guardado = await db.dadosExportados.findUnique({
+        where: {
+          projectId_ano_mes_tipo: { projectId: alvo.projectId, ano: alvo.ano, mes: alvo.mes, tipo: "direct" },
+        },
+        select: { dados: true },
+      });
+      direct = comoDirect(guardado?.dados);
+    }
+    const rascunho = rascunhoDaConclusao({ mes: alvo.mes, ...r.dados }, anterior, direct);
     if (rascunho) {
       preenchidos.conclusao = rascunho;
       r.avisos.push("Conclusão: rascunho escrito a partir dos números. Revise em Editar e acrescente o contexto do mês.");

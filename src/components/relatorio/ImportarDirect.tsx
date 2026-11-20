@@ -8,7 +8,9 @@ import { lerExportacao } from "@/lib/exportacao";
 import { MESES_CURTOS } from "@/lib/relatorio";
 
 /* ============================================================================
-   Importa o Direct do arquivo de "Exportar suas informações".
+   Importa o Direct do arquivo de "Exportar suas informações" — opcional: a
+   coleta pela API (lib/directApi.ts) já preenche os meses sozinha. O arquivo
+   completa o que ela não alcança: o passado distante, ligações e solicitações.
 
    A leitura acontece aqui, no navegador: o servidor recebe só os números de
    cada mês. Por isso o arquivo pode ter gigas (vem com as fotos do Direct) —
@@ -22,12 +24,9 @@ const rotulo = (ano: number, mes: number) => `${MESES_CURTOS[mes - 1].toLowerCas
 export function ImportarDirect({
   projectId,
   resumo,
-  variante = "cartao",
 }: {
   projectId: string;
   resumo?: ResumoDirect;
-  /** "botao" é a versão da barra do relatório: só o botão e o andamento. */
-  variante?: "cartao" | "botao";
 }) {
   const router = useRouter();
   const zip = useRef<HTMLInputElement>(null);
@@ -85,36 +84,6 @@ export function ImportarDirect({
     </>
   );
 
-  if (variante === "botao") {
-    return (
-      <>
-        {entradas}
-        {etapa && (
-          <span className="flex items-center gap-1.5 text-[11.5px] text-muted">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            {etapa}
-          </span>
-        )}
-        {!etapa && fim && (
-          <span
-            className={`max-w-[42ch] truncate text-[11.5px] ${fim.tom === "ok" ? "text-ok" : "text-warn"}`}
-            title={fim.texto}
-          >
-            {fim.texto}
-          </span>
-        )}
-        <button
-          onClick={() => zip.current?.click()}
-          disabled={!!etapa}
-          className="btn-ghost"
-          title="Importa o Direct do arquivo .zip de “Exportar suas informações”"
-        >
-          <MessageCircle className="h-3.5 w-3.5" /> Importar Direct
-        </button>
-      </>
-    );
-  }
-
   return (
     <div className="card p-5 lg:col-span-2">
       {entradas}
@@ -123,17 +92,18 @@ export function ImportarDirect({
         <div className="min-w-0 flex-1">
           <h2 className="text-[13px] font-semibold tracking-tight">Direct</h2>
           <p className="mt-0.5 text-[11.5px] text-muted">
-            {resumo
-              ? `Importado de ${resumo.de} a ${resumo.ate} (${resumo.meses} meses), atualizado em ${resumo.atualizado}. Importe um arquivo novo para trazer os meses seguintes.`
-              : "A API da Meta não entrega o histórico do Direct. Ele vem do arquivo que a conta exporta pela Central de Contas: mensagens, conversas, tempo de resposta, assuntos, dúvidas e o comparativo com o ano anterior."}
+            Automático: com a conta conectada, o gestor lê o Direct de hora em hora e o relatório de
+            cada mês já sai com mensagens, conversas, tempo de resposta, assuntos, dúvidas e o
+            comparativo com o ano anterior.
+            {resumo && ` Há Direct de ${resumo.de} a ${resumo.ate}, atualizado em ${resumo.atualizado}.`}
           </p>
         </div>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <button onClick={() => zip.current?.click()} disabled={!!etapa} className="btn-primary">
+        <button onClick={() => zip.current?.click()} disabled={!!etapa} className="btn-ghost">
           {etapa ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-          Escolher o .zip
+          Importar arquivo (.zip)
         </button>
         <button onClick={() => pasta.current?.click()} disabled={!!etapa} className="btn-ghost">
           <FolderOpen className="h-3.5 w-3.5" /> Pasta já descompactada
@@ -144,7 +114,9 @@ export function ImportarDirect({
       {fim && <p className={`mt-3 text-[11.5px] ${fim.tom === "ok" ? "text-ok" : "text-warn"}`}>{fim.texto}</p>}
 
       <p className="mt-3 text-[11px] leading-relaxed text-faint">
-        No Instagram do cliente: Central de Contas → Suas informações e permissões → Exportar suas
+        Opcional — o arquivo exportado completa o que a API não dá: os meses de antes da coleta
+        (com conversas longas inteiras), as ligações e as solicitações de mensagem. No Instagram do
+        cliente: Central de Contas → Suas informações e permissões → Exportar suas
         informações → Criar exportação → a conta → Exportar para o dispositivo → Personalizar
         informações: só <b>Mensagens</b> · Período: <b>Desde o início</b> · Formato: <b>JSON</b> ·
         Qualidade da mídia: baixa. A Meta avisa por e-mail quando fica pronto. O arquivo é lido aqui

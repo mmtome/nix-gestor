@@ -25,7 +25,6 @@ import type { ExtrasRelatorio, LinhaComparativa } from "@/lib/relatorio";
 import type { DirectDeck } from "@/lib/direct";
 import { Deck, type DadosDeck } from "./Deck";
 import { Editor, type EstadoRelatorio } from "./Editor";
-import { ImportarDirect } from "./ImportarDirect";
 
 /* ============================================================================
    A tela do relatório: alterna entre apresentar e editar.
@@ -324,8 +323,6 @@ export function RelatorioView({
               Meses anteriores
             </button>
           )}
-
-          <ImportarDirect projectId={projectId} variante="botao" />
 
           <button
             onClick={() => setModo(modo === "editar" ? "apresentar" : "editar")}

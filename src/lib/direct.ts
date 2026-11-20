@@ -28,6 +28,19 @@ export type MensagemBruta = {
   respostaStory: boolean;
   reacoes: { emoji: string; autor: string; ts?: number }[];
   segundosLigacao: number;
+  /** O que o texto diz, já extraído. A API guarda só isto, sem o texto. */
+  feicoes?: Feicoes;
+};
+
+export type Feicoes = {
+  /** Sobrou texto depois de tirar a saudação. */
+  texto: boolean;
+  temas: string[];
+  pergunta: boolean;
+  emojis: string[];
+  /** Pergunta normalizada e a forma de exibir, para achar as repetidas. */
+  frase?: string;
+  forma?: string;
 };
 
 export type ConversaBruta = {
@@ -75,8 +88,12 @@ export type DirectMes = {
   };
   emojis: Contagem[];
   porConversa: { media: number; mediana: number; faixas: Contagem[] };
-  /** Data da última mensagem do arquivo — até onde ele enxerga. */
+  /** Arquivo: data da última mensagem. API: quando o resumo foi refeito. */
   arquivoAte: string;
+  /** "api" não tem ligações nem solicitações: a Meta não as entrega. */
+  fonte: "arquivo" | "api";
+  /** Falso no mês que começou antes da coleta contínua pela API. */
+  completo: boolean;
 };
 
 /* --------------------------------------------------------- leitura de texto */
@@ -210,6 +227,25 @@ function paraExibir(t: string) {
   let s = t.replace(/\s+/g, " ").trim();
   for (let i = 0; i < 3 && SAUDACAO_ORIGINAL.test(s); i++) s = s.replace(SAUDACAO_ORIGINAL, "");
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/** Assunto, pergunta e emojis de uma mensagem; o texto em si não sai daqui. */
+export function feicoesDoTexto(texto: string): Feicoes {
+  const emojis = emojisDe(texto);
+  const n = texto ? semSaudacao(normalizar(texto)) : "";
+  if (!n) return { texto: false, temas: [], pergunta: false, emojis };
+
+  const temas = ASSUNTOS.filter((t) => t.termos.test(n)).map((t) => t.rotulo);
+  const pergunta = texto.includes("?") || PERGUNTA.test(n);
+  const frase = n.replace(/[^\p{L}\p{N} ]+/gu, "").trim();
+  const repetivel = pergunta && frase.split(" ").length >= 3 && frase.length <= 90;
+  return {
+    texto: true,
+    temas,
+    pergunta,
+    emojis,
+    ...(repetivel ? { frase, forma: paraExibir(texto) } : {}),
+  };
 }
 
 /* --------------------------------------------------------------- emojis */
@@ -374,7 +410,7 @@ export function resumirDirect(conversas: ConversaBruta[], dono: string) {
       if (m.tipo === "reacao") {
         if (doPublico) {
           a.interacoes.reacoes++;
-          for (const e of emojisDe(m.texto)) somar(a.emojis, e);
+          for (const e of (m.feicoes ?? feicoesDoTexto(m.texto)).emojis) somar(a.emojis, e);
         } else a.interacoes.reacoesConta++;
         continue;
       }
@@ -416,29 +452,26 @@ export function resumirDirect(conversas: ConversaBruta[], dono: string) {
       a.interacoes.figurinhas += m.figurinhas;
       if (m.compartilhamento) a.interacoes.compartilhamentos++;
       if (m.respostaStory) a.interacoes.respostasStory++;
-      for (const e of emojisDe(m.texto)) somar(a.emojis, e);
+      const fe = m.feicoes ?? feicoesDoTexto(m.texto);
+      for (const e of fe.emojis) somar(a.emojis, e);
+      if (!fe.texto) continue;
 
-      if (!m.texto) continue;
-      const n = semSaudacao(normalizar(m.texto));
-      if (!n) continue;
-
-      const temas = ASSUNTOS.filter((t) => t.termos.test(n)).map((t) => t.rotulo);
-      for (const t of temas.length ? temas : ["Outros"]) {
+      const temas = fe.temas.length ? fe.temas : ["Outros"];
+      for (const t of temas) {
         const s = a.assuntos.get(t) ?? { conversas: new Set<string>(), mensagens: 0 };
         s.conversas.add(c.id);
         s.mensagens++;
         a.assuntos.set(t, s);
       }
 
-      if (m.texto.includes("?") || PERGUNTA.test(n)) {
+      if (fe.pergunta) {
         a.perguntas++;
-        for (const t of temas.length ? temas : ["Outros"]) somar(a.temasPergunta, t);
-        const frase = n.replace(/[^\p{L}\p{N} ]+/gu, "").trim();
-        if (frase.split(" ").length >= 3 && frase.length <= 90) {
-          const f = a.frequentes.get(frase) ?? { pessoas: new Set<string>(), formas: new Map<string, number>() };
+        for (const t of temas) somar(a.temasPergunta, t);
+        if (fe.frase && fe.forma) {
+          const f = a.frequentes.get(fe.frase) ?? { pessoas: new Set<string>(), formas: new Map<string, number>() };
           f.pessoas.add(m.autor);
-          somar(f.formas, paraExibir(m.texto));
-          a.frequentes.set(frase, f);
+          somar(f.formas, fe.forma);
+          a.frequentes.set(fe.frase, f);
         }
       }
     }
@@ -524,6 +557,8 @@ export function resumirDirect(conversas: ConversaBruta[], dono: string) {
           : [],
       },
       arquivoAte: ate,
+      fonte: "arquivo",
+      completo: true,
     };
     return { ano, mes: m, dados };
   });
@@ -597,6 +632,8 @@ export function comoDirect(v: unknown): DirectMes | null {
     emojis: contagens(d.emojis),
     porConversa: { media: num(pc.media), mediana: num(pc.mediana), faixas: contagens(pc.faixas) },
     arquivoAte: typeof d.arquivoAte === "string" ? d.arquivoAte : "",
+    fonte: d.fonte === "api" ? "api" : "arquivo",
+    completo: d.completo !== false,
   };
 }
 
