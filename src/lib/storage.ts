@@ -1,5 +1,5 @@
 import "server-only";
-import { writeFile, mkdir, readFile } from "node:fs/promises";
+import { writeFile, mkdir, readFile, unlink } from "node:fs/promises";
 import path from "node:path";
 
 /**
@@ -44,9 +44,25 @@ export async function putFile(
     return `${BLOB_PREFIX}${blob.pathname}`;
   }
 
-  await mkdir(UPLOAD_DIR, { recursive: true });
-  await writeFile(path.join(UPLOAD_DIR, fileName), bytes);
+  // fileName pode ter subpasta (o SAC grava em sac/aaaa/mm/).
+  const destino = path.join(UPLOAD_DIR, fileName);
+  await mkdir(path.dirname(destino), { recursive: true });
+  await writeFile(destino, bytes);
   return fileName;
+}
+
+/** Apaga o arquivo; não falha se ele já não existir. */
+export async function deleteFile(key: string): Promise<void> {
+  try {
+    if (isBlobKey(key)) {
+      const { del } = await import("@vercel/blob");
+      await del(blobPathname(key));
+    } else {
+      await unlink(path.join(UPLOAD_DIR, key));
+    }
+  } catch {
+    // já apagado ou indisponível: nada a fazer
+  }
 }
 
 /** Conteúdo do anexo, já com a permissão conferida pela rota que chama. */

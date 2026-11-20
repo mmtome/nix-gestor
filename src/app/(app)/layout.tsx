@@ -10,7 +10,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const user = await requireUser();
   const projectIds = await visibleProjectIds(user);
 
-  const [projects, unread, users] = await Promise.all([
+  const [projects, unread, users, sacPendentes] = await Promise.all([
     db.project.findMany({
       where: { id: { in: projectIds }, archived: false },
       orderBy: { name: "asc" },
@@ -26,6 +26,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       orderBy: { name: "asc" },
       select: { id: true, name: true, email: true, avatarColor: true },
     }),
+    db.sacCard.count({ where: { status: "novo" } }),
   ]);
 
   const navProjects = projects
@@ -42,7 +43,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <AppContextProvider users={users} projects={navProjects} currentUser={user}>
       <div className="flex h-screen overflow-hidden print:block print:h-auto print:overflow-visible">
         <div className="contents print:hidden">
-          <Sidebar projects={navProjects} unread={unread} user={user} />
+          <Sidebar projects={navProjects} unread={unread} sacPendentes={sacPendentes} user={user} />
         </div>
         <div className="flex min-w-0 flex-1 flex-col print:block">
           <div className="contents print:hidden">

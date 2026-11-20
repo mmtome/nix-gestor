@@ -132,6 +132,7 @@ model Task {
    */
   /**
    * /**
+   * /**
    * /* O check de aprovação é a única ação manual: a partir dele, o post sobe
    * sozinho quando `dueAt` chegar. Ver src/lib/publicador.ts.
    */
@@ -449,4 +450,163 @@ model DadosExportados {
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, ano, mes, tipo])
+}
+
+// ============================================================================
+// SAC: prints de dúvidas de clientes mandados num grupo de WhatsApp (docs/sac).
+// A Evolution API manda cada mensagem do grupo para /api/sac/webhook; o print
+// vira card e a reação ou a resposta no grupo muda o status. Não pertence a
+// projeto: é uma aba própria do gestor.
+// ============================================================================
+
+/// Configuração única (id "sac"), editada na tela de configurações do SAC.
+/// A chave da Evolution fica cifrada (lib/meta.ts → cifrar).
+model SacConfig {
+  id                 String   @id @default("sac")
+  evolutionUrl       String?
+  evolutionKey       String?
+  evolutionInstancia String   @default("sac")
+  webhookToken       String
+  groupJid           String?
+  groupNome          String?
+  /// fromMe | allowlist | any
+  senderMode         String   @default("fromMe")
+  allowedSenders     String[] @default([])
+  albumWindowSeconds Int      @default(60)
+  slaAmareloHoras    Int      @default(2)
+  slaVermelhoHoras   Int      @default(6)
+  emojisResolvido    String[] @default(["✅", "✔️", "☑️"])
+  emojisArquivado    String[] @default(["❌"])
+  /// Ao resolver pelo gestor, reage ✅ no print do grupo.
+  reagirAoResolver   Boolean  @default(true)
+  logPayloads        Boolean  @default(true)
+  atualizadoEm       DateTime @updatedAt
+}
+
+/// Dicionário da legenda: #ig, #ingresso, #lapa… (type: canal | categoria | evento | prioridade).
+model SacTag {
+  slug    String   @id
+  type    String
+  label   String
+  aliases String[] @default([])
+  color   String?
+  active  Boolean  @default(true)
+  sort    Int      @default(0)
+
+  cardsCanal      SacCard[] @relation("SacCanal")
+  cardsCategoria  SacCard[] @relation("SacCategoria")
+  cardsEvento     SacCard[] @relation("SacEvento")
+  cardsPrioridade SacCard[] @relation("SacPrioridade")
+}
+
+/// status: novo | respondido_grupo | resolvido | arquivado
+model SacCard {
+  id                String    @id @default(cuid())
+  /// id do print principal no WhatsApp
+  waMessageId       String    @unique
+  groupJid          String
+  status            String    @default("novo")
+  canal             String?
+  categoria         String?
+  evento            String?
+  prioridade        String?
+  titulo            String    @default("")
+  legendaOriginal   String    @default("")
+  tagsDesconhecidas String[]  @default([])
+  senderId          String?
+  senderName        String?
+  senderFromMe      Boolean   @default(false)
+  /// rank fracionado dentro da coluna (lib/ordering.ts)
+  ordem             String
+  receivedAt        DateTime
+  firstResponseAt   DateTime?
+  resolvedAt        DateTime?
+  resolvedBy        String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  canalTag      SacTag? @relation("SacCanal", fields: [canal], references: [slug], onDelete: SetNull, onUpdate: Cascade)
+  categoriaTag  SacTag? @relation("SacCategoria", fields: [categoria], references: [slug], onDelete: SetNull, onUpdate: Cascade)
+  eventoTag     SacTag? @relation("SacEvento", fields: [evento], references: [slug], onDelete: SetNull, onUpdate: Cascade)
+  prioridadeTag SacTag? @relation("SacPrioridade", fields: [prioridade], references: [slug], onDelete: SetNull, onUpdate: Cascade)
+
+  attachments SacAttachment[]
+  comments    SacComment[]
+  events      SacEvent[]
+
+  @@index([status, receivedAt(sort: Desc)])
+  @@index([senderId, receivedAt(sort: Desc)])
+}
+
+/// Imagens do card. O print principal também entra aqui, com o mesmo waMessageId do card.
+model SacAttachment {
+  id          String   @id @default(cuid())
+  cardId      String
+  waMessageId String   @unique
+  storageKey  String
+  mimetype    String
+  createdAt   DateTime @default(now())
+
+  card SacCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([cardId])
+}
+
+/// source: whatsapp (resposta no grupo) | gestor (nota interna)
+model SacComment {
+  id          String   @id @default(cuid())
+  cardId      String
+  waMessageId String?  @unique
+  authorId    String?
+  authorName  String?
+  text        String
+  source      String
+  createdAt   DateTime @default(now())
+
+  card SacCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([cardId, createdAt])
+}
+
+/// Histórico do card. type: criado | status | comentario | anexo | anexo_removido | reclassificado
+/// via: reacao | resposta | gestor | sistema
+model SacEvent {
+  id          Int      @id @default(autoincrement())
+  cardId      String
+  type        String
+  fromStatus  String?
+  toStatus    String?
+  via         String?
+  actorId     String?
+  actorName   String?
+  emoji       String?
+  waMessageId String?
+  createdAt   DateTime @default(now())
+
+  card SacCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([cardId, createdAt])
+  @@index([waMessageId])
+}
+
+/// O que chegou no webhook, sem as imagens (base64 sai antes de gravar).
+/// Só mensagens de grupo: conversa de cliente com o número nunca é gravada.
+model SacWebhookLog {
+  id         Int      @id @default(autoincrement())
+  receivedAt DateTime @default(now())
+  event      String?
+  payload    Json
+  result     String?
+
+  @@index([receivedAt])
+}
+
+/// Grupos e remetentes vistos pelo webhook, para escolher na tela de configurações.
+/// tipo: grupo | remetente (só do grupo monitorado)
+model SacVisto {
+  jid     String   @id
+  tipo    String
+  nome    String?
+  vistoEm DateTime @default(now())
+  total   Int      @default(1)
 }

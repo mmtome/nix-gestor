@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Home, Inbox, CheckSquare, LayoutGrid, Plus, Star, LogOut } from "lucide-react";
+import { Home, Inbox, CheckSquare, LayoutGrid, Headset, Plus, Star, LogOut } from "lucide-react";
 import { Wordmark } from "@/components/brand/Logo";
 import { Avatar } from "@/components/ui/Avatar";
 import { NewProjectModal } from "./NewProjectModal";
@@ -15,15 +15,19 @@ const NAV = [
   { href: "/inbox", label: "Caixa de entrada", icon: Inbox },
   { href: "/my-tasks", label: "Minhas tarefas", icon: CheckSquare },
   { href: "/projects", label: "Projetos", icon: LayoutGrid },
+  { href: "/sac", label: "SAC", icon: Headset },
 ];
 
 export function Sidebar({
   projects,
   unread,
+  sacPendentes,
   user,
 }: {
   projects: ContextProject[];
   unread: number;
+  /** Cards do SAC em "Aguardando resposta". */
+  sacPendentes: number;
   user: { name: string; email: string; avatarColor: string };
 }) {
   const pathname = usePathname();
@@ -55,6 +59,11 @@ export function Sidebar({
               {href === "/inbox" && unread > 0 && (
                 <span className="rounded-full bg-brand px-1.5 py-0.5 text-[10px] font-semibold text-white">
                   {unread > 99 ? "99+" : unread}
+                </span>
+              )}
+              {href === "/sac" && sacPendentes > 0 && (
+                <span className="rounded-full bg-warn px-1.5 py-0.5 text-[10px] font-semibold text-ink">
+                  {sacPendentes > 99 ? "99+" : sacPendentes}
                 </span>
               )}
             </Link>

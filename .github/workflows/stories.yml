@@ -2,7 +2,7 @@
 # A Meta apaga os números de um story 24 h depois de publicado e só detalha as
 # 20 últimas mensagens de cada conversa; o cron da Vercel (plano Hobby) só roda
 # uma vez por dia. Ver src/app/api/cron/stories e src/app/api/cron/direct.
-name: Coletar stories e Direct
+name: Coletar stories e Direct (e limpar o SAC)
 
 on:
   schedule:
@@ -30,3 +30,12 @@ jobs:
           curl --fail-with-body --silent --show-error --max-time 310
           -H "Authorization: Bearer ${CRON_SECRET}"
           https://nix-gestor.vercel.app/api/cron/direct
+
+      - name: Limpar o log do SAC
+        if: always()
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: >-
+          curl --fail-with-body --silent --show-error --max-time 60
+          -H "Authorization: Bearer ${CRON_SECRET}"
+          https://nix-gestor.vercel.app/api/cron/sac

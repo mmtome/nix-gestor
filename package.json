@@ -8,6 +8,7 @@
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --test \"src/lib/sac/*.test.ts\"",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma push",
     "db:studio": "prisma studio",
