@@ -328,3 +328,224 @@ export function BarraComposicao({
     </div>
   );
 }
+
+/* -------------------------------------------------------------------------- */
+/* Direct — mensagens por dia do mês                                           */
+/* -------------------------------------------------------------------------- */
+
+const LILAS = "#D9C6E3";
+
+/** Teto e marcas redondas para o eixo: 0, 100, 200 em vez de 0, 83, 167. */
+function escala(max: number) {
+  const bruto = Math.max(max, 1) / 4;
+  const ordem = Math.pow(10, Math.floor(Math.log10(bruto)));
+  const passo = [1, 2, 2.5, 5, 10].map((m) => m * ordem).find((p) => p >= bruto)!;
+  const teto = Math.ceil(Math.max(max, 1) / passo) * passo;
+  return { teto, marcas: Array.from({ length: Math.round(teto / passo) + 1 }, (_, i) => i * passo) };
+}
+
+/** Até 10 mil o número vai inteiro: "1 mil" para 1.500 engana. */
+const eixo = (v: number) => (v >= 10_000 ? compacto(v) : numero(v));
+
+export function GraficoDias({ dias }: { dias: { dia: number; recebidas: number; enviadas: number }[] }) {
+  if (!dias.length) return null;
+  const W = 1000;
+  const H = 330;
+  const M = { top: 26, right: 8, bottom: 30, left: 56 };
+  const iw = W - M.left - M.right;
+  const ih = H - M.top - M.bottom;
+
+  const { teto, marcas } = escala(Math.max(...dias.map((d) => d.recebidas + d.enviadas)));
+  const coluna = iw / dias.length;
+  const largura = coluna * 0.66;
+  const y = (v: number) => (v / teto) * ih;
+  const pico = dias.reduce((a, b) => (b.recebidas + b.enviadas > a.recebidas + a.enviadas ? b : a));
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Mensagens por dia do mês">
+      {marcas.map((v) => (
+        <g key={v}>
+          <line x1={M.left} y1={M.top + ih - y(v)} x2={W - M.right} y2={M.top + ih - y(v)} stroke={LINHA} />
+          <text x={M.left - 8} y={M.top + ih - y(v) + 4} textAnchor="end" fontSize="13" fill={TEXTO_FRACO}>
+            {eixo(v)}
+          </text>
+        </g>
+      ))}
+      {dias.map((d, i) => {
+        const x = M.left + i * coluna + (coluna - largura) / 2;
+        const hr = y(d.recebidas);
+        const he = y(d.enviadas);
+        return (
+          <g key={d.dia}>
+            {hr > 0 && <rect x={x} y={M.top + ih - hr} width={largura} height={hr} fill={d === pico ? AMBAR : ROXO} />}
+            {he > 0 && <rect x={x} y={M.top + ih - hr - he} width={largura} height={he} fill={LILAS} />}
+            {(d.dia === 1 || d.dia % 5 === 0) && (
+              <text x={x + largura / 2} y={H - 10} textAnchor="middle" fontSize="12" fill={TEXTO_FRACO}>
+                {d.dia}
+              </text>
+            )}
+          </g>
+        );
+      })}
+      {pico.recebidas + pico.enviadas > 0 && (
+        <text
+          x={M.left + (pico.dia - 1) * coluna + coluna / 2}
+          y={M.top + ih - y(pico.recebidas + pico.enviadas) - 8}
+          textAnchor="middle"
+          fontSize="13"
+          fontWeight="700"
+          fill="#231A28"
+        >
+          {numero(pico.recebidas + pico.enviadas)}
+        </text>
+      )}
+    </svg>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Direct — mapa de calor dia da semana × hora                                 */
+/* -------------------------------------------------------------------------- */
+
+export function MapaDeCalor({ mapa, dias }: { mapa: number[][]; dias: string[] }) {
+  const W = 1000;
+  const L = 56;
+  const celula = (W - L) / 24;
+  const alto = 34;
+  const H = alto * 7 + 26;
+  const max = Math.max(...mapa.flat(), 1);
+  let pico = { s: 0, h: 0, n: 0 };
+  mapa.forEach((linha, s) =>
+    linha.forEach((n, h) => {
+      if (n > pico.n) pico = { s, h, n };
+    }),
+  );
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Mensagens por dia da semana e hora">
+      {mapa.map((linha, s) => (
+        <g key={s}>
+          <text x={L - 10} y={s * alto + alto / 2 + 5} textAnchor="end" fontSize="13" fill={TEXTO_FRACO}>
+            {dias[s]}
+          </text>
+          {linha.map((n, h) => (
+            <rect
+              key={h}
+              x={L + h * celula + 1.5}
+              y={s * alto + 1.5}
+              width={celula - 3}
+              height={alto - 3}
+              rx="3"
+              fill={n ? ROXO : "#F4EEF6"}
+              fillOpacity={n ? 0.12 + 0.88 * (n / max) : 1}
+              stroke={pico.n && s === pico.s && h === pico.h ? AMBAR : "none"}
+              strokeWidth="3"
+            />
+          ))}
+        </g>
+      ))}
+      {Array.from({ length: 8 }, (_, i) => i * 3).map((h) => (
+        <text key={h} x={L + h * celula + celula / 2} y={H - 6} textAnchor="middle" fontSize="12" fill={TEXTO_FRACO}>
+          {String(h).padStart(2, "0")}h
+        </text>
+      ))}
+    </svg>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Direct — mês a mês, este ano contra o anterior                              */
+/* -------------------------------------------------------------------------- */
+
+export function GraficoAnoContraAno({
+  atual,
+  anterior,
+  anos,
+  destaque,
+  alto = 300,
+}: {
+  atual: SerieAnual[];
+  anterior?: SerieAnual[];
+  anos: [number, number];
+  destaque: number;
+  /** Altura do desenho para 1000 de largura: coluna estreita pede mais. */
+  alto?: number;
+}) {
+  const W = 1000;
+  const H = alto;
+  const M = { top: 30, right: 8, bottom: 40, left: 70 };
+  const iw = W - M.left - M.right;
+  const ih = H - M.top - M.bottom;
+  const { teto, marcas } = escala(Math.max(...atual.map((p) => p.valor), ...(anterior ?? []).map((p) => p.valor)));
+  const fonte = alto > 400 ? 22 : 13;
+  const coluna = iw / 12;
+  const barra = anterior ? coluna * 0.32 : coluna * 0.56;
+  const y = (v: number) => (v / teto) * ih;
+  const valor = (s: SerieAnual[] | undefined, mes: number) => s?.find((p) => p.mes === mes)?.valor ?? 0;
+
+  return (
+    <div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Mensagens recebidas por mês">
+        {marcas.map((v) => (
+          <g key={v}>
+            <line x1={M.left} y1={M.top + ih - y(v)} x2={W - M.right} y2={M.top + ih - y(v)} stroke={LINHA} />
+            <text x={M.left - 10} y={M.top + ih - y(v) + fonte / 3} textAnchor="end" fontSize={fonte} fill={TEXTO_FRACO}>
+              {eixo(v)}
+            </text>
+          </g>
+        ))}
+        {Array.from({ length: 12 }, (_, i) => i + 1).map((mes) => {
+          const x0 = M.left + (mes - 1) * coluna + (coluna - (anterior ? barra * 2 + 4 : barra)) / 2;
+          const xb = anterior ? x0 + barra + 4 : x0;
+          const va = valor(anterior, mes);
+          const vb = valor(atual, mes);
+          const ativo = mes === destaque;
+          return (
+            <g key={mes}>
+              {anterior && va > 0 && (
+                <rect x={x0} y={M.top + ih - y(va)} width={barra} height={y(va)} rx="2" fill={LILAS} />
+              )}
+              {vb > 0 && (
+                <rect x={xb} y={M.top + ih - y(vb)} width={barra} height={y(vb)} rx="2" fill={ativo ? AMBAR : ROXO} />
+              )}
+              {ativo && vb > 0 && (
+                <text
+                  x={xb + barra / 2}
+                  y={M.top + ih - y(vb) - 8}
+                  textAnchor="middle"
+                  fontSize={fonte}
+                  fontWeight="700"
+                  fill="#231A28"
+                >
+                  {numero(vb)}
+                </text>
+              )}
+              <text
+                x={M.left + (mes - 0.5) * coluna}
+                y={H - 12}
+                textAnchor="middle"
+                fontSize={fonte}
+                fontWeight={ativo ? 700 : 400}
+                fill={ativo ? "#231A28" : TEXTO_FRACO}
+              >
+                {MESES_CURTOS[mes - 1]}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+      {anterior && (
+        <div className="mt-[0.4em] flex gap-[1.6em] text-[1.05em] text-[#4E4257]">
+          <span className="flex items-center gap-[0.4em]">
+            <span className="inline-block h-[0.8em] w-[0.8em] rounded-[0.15em]" style={{ background: LILAS }} />
+            {anos[0]}
+          </span>
+          <span className="flex items-center gap-[0.4em]">
+            <span className="inline-block h-[0.8em] w-[0.8em] rounded-[0.15em]" style={{ background: ROXO }} />
+            {anos[1]}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}

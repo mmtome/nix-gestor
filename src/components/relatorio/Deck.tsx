@@ -3,8 +3,8 @@
  *
  * Slides 16:9 no padrão das apresentações que a agência já entrega. Os que
  * dependem de dado opcional (horários, destaques, formatos, comunidade,
- * comparativos, conclusão) só aparecem quando há dado, e a numeração segue o
- * que foi impresso.
+ * Direct, comparativos, conclusão) só aparecem quando há dado, e a numeração
+ * segue o que foi impresso.
  *
  * Escala: cada slide é um container de consulta e a fonte-base é 1cqw, então
  * TODA medida interna em `em` vale um percentual da largura do slide. O mesmo
@@ -23,21 +23,29 @@ import {
   multiploDeAlcance,
   temDados,
   duracao,
+  MESES_CURTOS,
 } from "@/lib/relatorio";
 import type {
   Comparativo,
+  Contagem,
   Destaque,
   ExtrasRelatorio,
   Fatia,
   MediaPorGrupo,
   PontoHora,
+  SerieAnual,
 } from "@/lib/relatorio";
+import { DIAS_CURTOS, DIAS_SEMANA, picos } from "@/lib/direct";
+import type { DirectDeck, DirectMes } from "@/lib/direct";
 import {
   GraficoHorarios,
   GraficoPizza,
   GraficoBarras,
   ListaComBarra,
   BarraComposicao,
+  GraficoDias,
+  MapaDeCalor,
+  GraficoAnoContraAno,
 } from "./graficos";
 
 export type DestaqueResolvido = Destaque & { src?: string };
@@ -78,6 +86,8 @@ export type DadosDeck = {
   fonte: string;
   comparativos: Comparativo[];
   extras: ExtrasRelatorio;
+  /** Do arquivo exportado do Instagram; sem ele, os slides do Direct somem. */
+  direct: DirectDeck | null;
 };
 
 /* -------------------------------------------------------------- primitivas */
@@ -303,6 +313,436 @@ function BarrasMedia({ grupos }: { grupos: MediaPorGrupo[] }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+/** Barras com contagem e percentual; a maior em âmbar, a de alerta em laranja. */
+function BarrasContagem({
+  itens,
+  rotulo = "10.5em",
+  alerta,
+  destacarMaior = true,
+}: {
+  itens: Contagem[];
+  rotulo?: string;
+  alerta?: string;
+  destacarMaior?: boolean;
+}) {
+  const max = Math.max(...itens.map((i) => i.n), 1);
+  const soma = itens.reduce((s, i) => s + i.n, 0);
+  return (
+    <ul className="flex flex-col gap-[0.6em]">
+      {itens.map((i) => (
+        <li
+          key={i.rotulo}
+          className="grid items-center gap-[0.8em] text-[1.1em]"
+          style={{ gridTemplateColumns: `${rotulo} 1fr 6.4em` }}
+        >
+          <span className="truncate text-[#4E4257]">{i.rotulo}</span>
+          <div className="h-[0.55em] overflow-hidden rounded-full bg-[#EFE7F3]">
+            <div
+              className={`h-full rounded-full ${
+                i.rotulo === alerta
+                  ? "bg-[#FB7601]"
+                  : destacarMaior && i.n === max
+                    ? "bg-[#FFAB00]"
+                    : "bg-[#8013A8]"
+              }`}
+              style={{ width: `${(i.n / max) * 100}%` }}
+            />
+          </div>
+          <span className="text-right tabular-nums text-[#231A28]">
+            <strong>{numero(i.n)}</strong>
+            {soma > 0 && <span className="text-[#6E6377]"> · {porcento((i.n / soma) * 100, 0)}</span>}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+const variacao = (atual: number, antes: number) => {
+  if (!antes) return "—";
+  const x = ((atual - antes) / antes) * 100;
+  return `${x >= 0 ? "+" : "−"}${porcento(Math.abs(x), 0)}`;
+};
+
+/**
+ * Os slides do Direct. É função, não componente, de propósito: a numeração
+ * (`proximo`) precisa correr na ordem do deck, durante o render dele.
+ */
+function slidesDirect(dd: DirectDeck, ano: number, mes: number, proximo: () => number) {
+  const dm = dd.atual;
+  const mesCurto = MESES_CURTOS[mes - 1].toLowerCase();
+  const ate = dm.arquivoAte
+    ? new Date(dm.arquivoAte).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })
+    : null;
+  const turnos = dm.respostas.respondidas + dm.respostas.semResposta;
+  const pc = picos(dm.mapa);
+  const ranking = [...dm.porDia]
+    .filter((p) => p.recebidas + p.enviadas > 0)
+    .sort((a, b) => b.recebidas + b.enviadas - (a.recebidas + a.enviadas))
+    .slice(0, 5);
+  const maiorDia = Math.max(...ranking.map((r) => r.recebidas + r.enviadas), 1);
+  const semana = (dia: number) => DIAS_CURTOS[new Date(Date.UTC(ano, mes - 1, dia)).getUTCDay()];
+  const it = dm.interacoes;
+  const assuntos = dm.assuntos.slice(0, 8);
+
+  const serieDe = (a: number) =>
+    dd.serie.filter((p) => p.ano === a).map((p) => ({ mes: p.mes, valor: p.recebidas }));
+  const doAno = serieDe(ano);
+  const doAnterior = serieDe(ano - 1);
+  const acumulado = (s: SerieAnual[]) => s.filter((p) => p.mes <= mes).reduce((t, p) => t + p.valor, 0);
+  const ant = dd.anterior;
+  const pctRespondidas = (d: DirectMes) => {
+    const t = d.respostas.respondidas + d.respostas.semResposta;
+    return t ? (d.respostas.respondidas / t) * 100 : 0;
+  };
+
+  return (
+    <>
+      {/* Direct — volume ------------------------------------------------ */}
+      <Slide numeroSlide={proximo()}>
+        <div className="flex h-full flex-col px-[4em] pb-[5em] pt-[3.4em]">
+          <div className="flex items-end justify-between gap-[2em]">
+            <Titulo>Direct</Titulo>
+            {ate && (
+              <p className="pb-[0.4em] text-right text-[1.1em] text-[#6E6377]">
+                Arquivo exportado do Instagram, com mensagens até {ate}
+              </p>
+            )}
+          </div>
+
+          <div className="mt-[1.8em] grid grid-cols-5 gap-[1.5em]">
+            {/* Rótulos de uma linha só: em cinco colunas, os de duas desalinham os números. */}
+            <Metrica rotulo="Recebidas" valor={numero(dm.recebidas)} nota={`mensagens, de ${numero(dm.pessoas)} pessoas`} />
+            <Metrica rotulo="Enviadas" valor={numero(dm.enviadas)} nota="mensagens da conta" />
+            <Metrica rotulo="Volume total" valor={numero(dm.recebidas + dm.enviadas)} nota="mensagens no mês" />
+            <Metrica
+              rotulo="Conversas"
+              valor={numero(dm.conversas)}
+              nota={`${numero(dm.iniciadas)} novas, ${numero(dm.iniciadasPeloPublico)} abertas pelo público`}
+            />
+            <Metrica
+              rotulo="Solicitações"
+              valor={numero(dm.solicitacoes)}
+              nota="de mensagem, ainda não aceitas"
+              tom="ambar"
+            />
+          </div>
+
+          <div className="mt-[2em] grid min-h-0 flex-1 grid-cols-[1.8fr_1fr] gap-[1.8em]">
+            <Cartao titulo="Mensagens por dia">
+              <GraficoDias dias={dm.porDia} />
+              <p className="mt-[0.6em] flex gap-[1.4em] text-[1em] text-[#4E4257]">
+                <span className="flex items-center gap-[0.4em]">
+                  <span className="inline-block h-[0.8em] w-[0.8em] rounded-[0.15em] bg-[#8013A8]" /> Recebidas
+                </span>
+                <span className="flex items-center gap-[0.4em]">
+                  <span className="inline-block h-[0.8em] w-[0.8em] rounded-[0.15em] bg-[#D9C6E3]" /> Enviadas
+                </span>
+                <span className="flex items-center gap-[0.4em]">
+                  <span className="inline-block h-[0.8em] w-[0.8em] rounded-[0.15em] bg-[#FFAB00]" /> Dia de pico
+                </span>
+              </p>
+            </Cartao>
+            <Cartao titulo="Dias mais movimentados">
+              <ol className="flex flex-col gap-[0.75em]">
+                {ranking.map((r, i) => (
+                  <li key={r.dia} className="grid grid-cols-[1.4em_6.2em_1fr_auto] items-center gap-[0.7em] text-[1.2em]">
+                    <span className="font-bold tabular-nums text-[#8013A8]">{i + 1}º</span>
+                    <span className="tabular-nums text-[#231A28]">
+                      {semana(r.dia)}, {String(r.dia).padStart(2, "0")}/{String(mes).padStart(2, "0")}
+                    </span>
+                    <div className="h-[0.5em] overflow-hidden rounded-full bg-[#EFE7F3]">
+                      <div
+                        className={`h-full rounded-full ${i === 0 ? "bg-[#FFAB00]" : "bg-[#8013A8]"}`}
+                        style={{ width: `${((r.recebidas + r.enviadas) / maiorDia) * 100}%` }}
+                      />
+                    </div>
+                    <span className="font-semibold tabular-nums text-[#231A28]">{numero(r.recebidas + r.enviadas)}</span>
+                  </li>
+                ))}
+              </ol>
+            </Cartao>
+          </div>
+        </div>
+      </Slide>
+
+      {/* Direct — atendimento ------------------------------------------- */}
+      <Slide numeroSlide={proximo()}>
+        <div className="flex h-full flex-col px-[4em] pb-[5em] pt-[3.4em]">
+          <Titulo>Atendimento</Titulo>
+          <p className="mt-[0.4em] text-[1.4em] text-[#4E4257]">
+            Do momento em que a pessoa escreve até a resposta da conta no Direct
+          </p>
+
+          <div className="mt-[1.8em] grid grid-cols-4 gap-[1.8em]">
+            <Metrica
+              rotulo="Tempo médio de resposta"
+              valor={dm.respostas.mediaMin != null ? duracao(dm.respostas.mediaMin) : "—"}
+              nota={dm.respostas.medianaMin != null ? `metade respondida em até ${duracao(dm.respostas.medianaMin)}` : undefined}
+              tom="ambar"
+            />
+            <Metrica
+              rotulo="Mensagens respondidas"
+              valor={turnos ? porcento(pctRespondidas(dm), 1) : "—"}
+              nota={turnos ? `${numero(dm.respostas.respondidas)} de ${numero(turnos)} vezes que o público escreveu` : undefined}
+            />
+            <Metrica
+              rotulo="Conversas sem resposta"
+              valor={numero(dm.semResposta)}
+              nota={dm.conversas ? `${porcento((dm.semResposta / dm.conversas) * 100, 1)} das conversas do mês` : undefined}
+            />
+            <Metrica
+              rotulo="Mensagens por conversa"
+              valor={decimal(dm.porConversa.media, 1)}
+              nota={`mediana de ${numero(dm.porConversa.mediana)}`}
+            />
+          </div>
+
+          <div className="mt-[2em] grid min-h-0 flex-1 grid-cols-2 gap-[1.8em]">
+            <Cartao titulo="Respostas por faixa de tempo">
+              <BarrasContagem itens={dm.respostas.faixas} alerta="Sem resposta" destacarMaior={false} />
+            </Cartao>
+            <Cartao titulo="Tamanho das conversas">
+              <BarrasContagem
+                itens={dm.porConversa.faixas.map((f) => ({
+                  ...f,
+                  rotulo: f.rotulo === "1 mensagem" ? f.rotulo : `${f.rotulo} mensagens`,
+                }))}
+                rotulo="13.5em"
+              />
+            </Cartao>
+          </div>
+        </div>
+      </Slide>
+
+      {/* Direct — picos -------------------------------------------------- */}
+      {dm.recebidas > 0 && (
+        <Slide numeroSlide={proximo()}>
+          <div className="flex h-full flex-col px-[4em] pb-[5em] pt-[3.4em]">
+            <Titulo>Picos no Direct</Titulo>
+            <p className="mt-[0.4em] text-[1.4em] text-[#4E4257]">
+              Mensagens recebidas por dia da semana e hora, no horário de Brasília
+            </p>
+
+            <div className="mt-[1.6em] grid grid-cols-3 gap-[1.8em]">
+              <Metrica
+                rotulo="Dia da semana de pico"
+                valor={DIAS_SEMANA[pc.semana]}
+                nota={`${numero(pc.porSemana[pc.semana])} mensagens recebidas`}
+              />
+              <Metrica
+                rotulo="Horário de pico"
+                valor={`${String(pc.hora).padStart(2, "0")}h às ${String((pc.hora + 1) % 24).padStart(2, "0")}h`}
+                nota={`${numero(pc.porHora[pc.hora])} mensagens nessa hora ao longo do mês`}
+              />
+              <Metrica
+                rotulo="Momento mais movimentado"
+                valor={`${DIAS_CURTOS[pc.celula.semana]} · ${String(pc.celula.hora).padStart(2, "0")}h`}
+                nota={`${numero(pc.celula.n)} mensagens`}
+                tom="ambar"
+              />
+            </div>
+
+            <div className="mt-[1.8em] min-h-0 flex-1">
+              <MapaDeCalor mapa={dm.mapa} dias={DIAS_CURTOS} />
+            </div>
+          </div>
+        </Slide>
+      )}
+
+      {/* Direct — assuntos e dúvidas ------------------------------------- */}
+      {assuntos.length > 0 && (
+        <Slide numeroSlide={proximo()}>
+          <div className="flex h-full flex-col px-[4em] pb-[5em] pt-[3.4em]">
+            <Titulo>Assuntos e dúvidas</Titulo>
+            <p className="mt-[0.4em] text-[1.4em] text-[#4E4257]">
+              O que o público escreveu no Direct, separado por palavras-chave
+            </p>
+
+            <div className="mt-[1.8em] grid min-h-0 flex-1 grid-cols-[1.1fr_1fr] gap-[2.4em]">
+              <div>
+                <div className="grid grid-cols-[1.8fr_0.8fr_0.8fr] bg-[#8013A8] px-[1em] py-[0.6em] text-[1.1em] font-bold uppercase tracking-[0.04em] text-white">
+                  <span>Assunto</span>
+                  <span className="text-right">Conversas</span>
+                  <span className="text-right">Mensagens</span>
+                </div>
+                {assuntos.map((a, i) => (
+                  <div
+                    key={a.rotulo}
+                    className="grid grid-cols-[1.8fr_0.8fr_0.8fr] items-baseline border-b border-[#E5DBE9] px-[1em] py-[0.62em] text-[1.3em] tabular-nums"
+                  >
+                    <span className={`font-bold ${i === 0 && a.rotulo !== "Outros" ? "text-[#FB7601]" : "text-[#231A28]"}`}>
+                      {a.rotulo}
+                    </span>
+                    <span className="text-right font-bold text-[#231A28]">{numero(a.conversas)}</span>
+                    <span className="text-right text-[#4E4257]">{numero(a.mensagens)}</span>
+                  </div>
+                ))}
+                <p className="mt-[0.8em] text-[1em] text-[#6E6377]">
+                  Uma mensagem pode tocar em mais de um assunto.
+                </p>
+              </div>
+
+              <Cartao titulo="Principais dúvidas">
+                <p className="mb-[1em] text-[1.25em] text-[#4E4257]">
+                  <strong className="tabular-nums text-[#231A28]">{numero(dm.duvidas.total)}</strong> mensagens com pergunta
+                </p>
+                <BarrasContagem itens={dm.duvidas.temas.slice(0, 6)} rotulo="14.5em" />
+                {dm.duvidas.frequentes.length > 0 && (
+                  <>
+                    <p className="mt-[1.3em] text-[1em] font-bold uppercase tracking-[0.1em] text-[#8013A8]">
+                      Perguntas que mais se repetiram
+                    </p>
+                    <ul className="mt-[0.6em] flex flex-col gap-[0.5em]">
+                      {dm.duvidas.frequentes.slice(0, 4).map((f) => (
+                        <li key={f.texto} className="flex items-baseline justify-between gap-[1em] text-[1.1em]">
+                          <span className="min-w-0 truncate text-[#231A28]">“{f.texto}”</span>
+                          <span className="shrink-0 tabular-nums text-[#6E6377]">{numero(f.pessoas)} pessoas</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </Cartao>
+            </div>
+          </div>
+        </Slide>
+      )}
+
+      {/* Direct — interações -------------------------------------------- */}
+      <Slide numeroSlide={proximo()}>
+        <div className="flex h-full flex-col px-[4em] pb-[5em] pt-[3.4em]">
+          <Titulo>Interações no Direct</Titulo>
+          {/* O Ç do título desce além da linha: o subtítulo afasta mais. */}
+          <p className="mt-[0.9em] text-[1.4em] text-[#4E4257]">Enviadas pelo público no mês</p>
+
+          <div className="mt-[1.8em] grid grid-cols-4 gap-x-[1.8em] gap-y-[2.2em]">
+            <Metrica
+              rotulo="Reações"
+              valor={numero(it.reacoes)}
+              nota={it.reacoesConta ? `e ${numero(it.reacoesConta)} da conta` : undefined}
+            />
+            <Metrica rotulo="Fotos e vídeos" valor={numero(it.midias)} />
+            <Metrica rotulo="Áudios" valor={numero(it.audios)} />
+            <Metrica rotulo="Figurinhas e GIFs" valor={numero(it.figurinhas)} />
+            <Metrica rotulo="Compartilhamentos" valor={numero(it.compartilhamentos)} nota="posts e reels enviados" />
+            <Metrica rotulo="Respostas aos stories" valor={numero(it.respostasStory)} />
+            <Metrica rotulo="Menções em stories" valor={numero(it.mencoesStory)} />
+            <Metrica
+              rotulo="Ligações"
+              valor={numero(it.ligacoes)}
+              nota={it.minutosLigacao ? `${numero(it.minutosLigacao)} min no total` : undefined}
+              tom="ambar"
+            />
+          </div>
+
+          {dm.emojis.length > 0 && (
+            <div className="mt-[2.6em]">
+              <Cartao titulo="Emojis mais usados">
+                <p className="flex flex-wrap gap-x-[1.4em] gap-y-[0.6em] text-[3em] leading-none">
+                  {dm.emojis.map((e) => (
+                    <span key={e.rotulo}>
+                      {e.rotulo}
+                      <span className="ml-[0.25em] text-[0.45em] font-semibold tabular-nums text-[#6E6377]">{numero(e.n)}</span>
+                    </span>
+                  ))}
+                </p>
+              </Cartao>
+            </div>
+          )}
+        </div>
+      </Slide>
+
+      {/* Direct — mês a mês e ano contra ano ---------------------------- */}
+      {(ant || doAno.length > 1) && (
+        <Slide numeroSlide={proximo()}>
+          <div className="flex h-full flex-col px-[4em] pb-[5em] pt-[3.4em]">
+            <Titulo>{ant ? `Atendimento ${ano - 1} × ${ano}` : "Direct mês a mês"}</Titulo>
+            <p className="mt-[0.4em] text-[1.4em] text-[#4E4257]">
+              {ant
+                ? `${nomeDoMes(mes)} de ${ano} contra ${nomeDoMes(mes).toLowerCase()} de ${ano - 1}`
+                : `Mensagens recebidas por mês em ${ano}`}
+            </p>
+
+            <div className={`mt-[1.8em] grid min-h-0 flex-1 gap-[2.4em] ${ant ? "grid-cols-[1fr_1.15fr]" : ""}`}>
+              {ant && (
+                <div>
+                  <div className="grid grid-cols-[2.2fr_0.9fr_0.9fr_0.9fr] bg-[#8013A8] px-[1em] py-[0.55em] text-[1.05em] font-bold uppercase tracking-[0.04em] text-white">
+                    <span>Métrica</span>
+                    <span className="text-right">{mesCurto}/{ano - 1}</span>
+                    <span className="text-right">{mesCurto}/{ano}</span>
+                    <span className="text-right">Variação</span>
+                  </div>
+                  {[
+                    { r: "Mensagens recebidas", a: ant.recebidas, b: dm.recebidas },
+                    { r: "Mensagens enviadas", a: ant.enviadas, b: dm.enviadas },
+                    { r: "Conversas no mês", a: ant.conversas, b: dm.conversas },
+                    { r: "Conversas iniciadas", a: ant.iniciadas, b: dm.iniciadas },
+                    { r: "Solicitações", a: ant.solicitacoes, b: dm.solicitacoes },
+                    { r: "Sem resposta", a: ant.semResposta, b: dm.semResposta },
+                  ].map((l) => (
+                    <div
+                      key={l.r}
+                      className="grid grid-cols-[2.2fr_0.9fr_0.9fr_0.9fr] items-baseline border-b border-[#E5DBE9] px-[1em] py-[0.55em] text-[1.2em] tabular-nums"
+                    >
+                      <span className="text-[#231A28]">{l.r}</span>
+                      <span className="text-right text-[#4E4257]">{numero(l.a)}</span>
+                      <span className="text-right font-bold text-[#231A28]">{numero(l.b)}</span>
+                      <span className="text-right font-semibold text-[#8013A8]">{variacao(l.b, l.a)}</span>
+                    </div>
+                  ))}
+                  <div className="grid grid-cols-[2.2fr_0.9fr_0.9fr_0.9fr] items-baseline border-b border-[#E5DBE9] px-[1em] py-[0.55em] text-[1.2em] tabular-nums">
+                    <span className="text-[#231A28]">Tempo médio de resposta</span>
+                    <span className="text-right text-[#4E4257]">
+                      {ant.respostas.mediaMin != null ? duracao(ant.respostas.mediaMin) : "—"}
+                    </span>
+                    <span className="text-right font-bold text-[#231A28]">
+                      {dm.respostas.mediaMin != null ? duracao(dm.respostas.mediaMin) : "—"}
+                    </span>
+                    <span className="text-right font-semibold text-[#8013A8]">
+                      {ant.respostas.mediaMin && dm.respostas.mediaMin != null
+                        ? variacao(dm.respostas.mediaMin, ant.respostas.mediaMin)
+                        : "—"}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[2.2fr_0.9fr_0.9fr_0.9fr] items-baseline border-b border-[#E5DBE9] px-[1em] py-[0.55em] text-[1.2em] tabular-nums">
+                    <span className="text-[#231A28]">Respondidas</span>
+                    <span className="text-right text-[#4E4257]">{porcento(pctRespondidas(ant), 0)}</span>
+                    <span className="text-right font-bold text-[#231A28]">{porcento(pctRespondidas(dm), 0)}</span>
+                    <span className="text-right font-semibold text-[#8013A8]">
+                      {`${pctRespondidas(dm) >= pctRespondidas(ant) ? "+" : "−"}${decimal(
+                        Math.abs(pctRespondidas(dm) - pctRespondidas(ant)),
+                        0,
+                      )} p.p.`}
+                    </span>
+                  </div>
+                  {doAnterior.length > 0 && (
+                    <p className="mt-[1em] text-[1.15em] leading-relaxed text-[#4E4257]">
+                      De janeiro a {nomeDoMes(mes).toLowerCase()}: {numero(acumulado(doAnterior))} mensagens recebidas em{" "}
+                      {ano - 1} e <strong className="text-[#231A28]">{numero(acumulado(doAno))}</strong> em {ano} (
+                      {variacao(acumulado(doAno), acumulado(doAnterior))}).
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <Cartao titulo="Mensagens recebidas por mês">
+                <GraficoAnoContraAno
+                  atual={doAno}
+                  anterior={doAnterior.length ? doAnterior : undefined}
+                  anos={[ano - 1, ano]}
+                  destaque={mes}
+                  alto={ant ? 640 : 300}
+                />
+              </Cartao>
+            </div>
+          </div>
+        </Slide>
+      )}
+    </>
   );
 }
 
@@ -675,6 +1115,8 @@ export function Deck({ d }: { d: DadosDeck }) {
           </div>
         </Slide>
       )}
+
+      {d.direct && slidesDirect(d.direct, d.ano, d.mes, proximo)}
 
       {/* 08 e 09 — Comparativos ------------------------------------------ */}
       {principais.length > 0 && (

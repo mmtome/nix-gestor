@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assertProjectAccess } from "@/lib/permissions";
 import { comoDestaques, comoExtras, comoFatias, comoHorarios } from "@/lib/relatorio";
+import { montarDirect } from "@/lib/direct";
 import { RelatorioView } from "@/components/relatorio/RelatorioView";
 import type { EstadoRelatorio } from "@/components/relatorio/Editor";
 
@@ -30,7 +31,7 @@ export default async function RelatorioPage({
   // por quem só tem acesso a este.
   if (!r || r.projectId !== projectId) notFound();
 
-  const [outros, conta] = await Promise.all([
+  const [outros, conta, direct] = await Promise.all([
     db.relatorioMensal.findMany({
       where: { projectId, ano: r.ano },
       select: {
@@ -47,6 +48,11 @@ export default async function RelatorioPage({
     db.instagramAccount.findUnique({
       where: { projectId },
       select: { igUserId: true, accessToken: true },
+    }),
+    // Este ano e o anterior: o comparativo do Direct é ano contra ano.
+    db.dadosExportados.findMany({
+      where: { projectId, tipo: "direct", ano: { in: [r.ano - 1, r.ano] } },
+      select: { ano: true, mes: true, dados: true },
     }),
   ]);
 
@@ -97,6 +103,7 @@ export default async function RelatorioPage({
       outrosMeses={outros}
       contaConectada={!!(conta?.igUserId && conta?.accessToken)}
       gerarAoAbrir={gerar === "1"}
+      direct={montarDirect(direct, r.ano, r.mes)}
     />
   );
 }

@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { assertProjectAccess } from "@/lib/permissions";
@@ -9,6 +10,7 @@ import { buscarMidias, importarMes } from "@/lib/insights";
 import { rascunhoDaConclusao } from "@/lib/conclusao";
 import { comoExtras } from "@/lib/relatorio";
 import { storiesDoMes } from "@/lib/stories";
+import { comoDirect } from "@/lib/direct";
 
 /* ============================================================================
    Relatório de resultados — criação, edição e importação.
@@ -196,7 +198,13 @@ export async function importarDaApi(id: string) {
       where: { projectId_ano_mes: { projectId: alvo.projectId, ...ant } },
       select: { mes: true, posts: true, visualizacoes: true, alcance: true },
     });
-    const rascunho = rascunhoDaConclusao({ mes: alvo.mes, ...r.dados }, anterior);
+    const direct = await db.dadosExportados.findUnique({
+      where: {
+        projectId_ano_mes_tipo: { projectId: alvo.projectId, ano: alvo.ano, mes: alvo.mes, tipo: "direct" },
+      },
+      select: { dados: true },
+    });
+    const rascunho = rascunhoDaConclusao({ mes: alvo.mes, ...r.dados }, anterior, comoDirect(direct?.dados));
     if (rascunho) {
       preenchidos.conclusao = rascunho;
       r.avisos.push("Conclusão: rascunho escrito a partir dos números. Revise em Editar e acrescente o contexto do mês.");
@@ -310,6 +318,45 @@ export async function importarMesesAnteriores(id: string) {
     vazios: vazios.sort((a, b) => a - b),
     falhas,
   };
+}
+
+/* ---------------------------------------------------------------- Direct */
+
+const mesDirect = z.object({
+  ano: z.number().int().min(2010).max(2100),
+  mes: z.number().int().min(1).max(12),
+  dados: z.record(z.string(), z.unknown()),
+});
+
+/**
+ * Grava o Direct lido do arquivo exportado, um registro por mês. O navegador
+ * já mandou só os agregados; o mês que vier de novo é substituído, o que não
+ * vier fica como estava. Vale para o projeto, não para um relatório: excluir
+ * e recriar o relatório do mês não perde o Direct.
+ */
+export async function salvarDirect(projectId: string, meses: z.input<typeof mesDirect>[]) {
+  const user = await requireUser();
+  await assertProjectAccess(user, projectId, true);
+
+  const lidos = z.array(mesDirect).max(60).parse(meses);
+  // Um mês agregado tem poucos KB; muito acima disso é texto que não devia vir.
+  if (lidos.some((m) => JSON.stringify(m.dados).length > 40_000)) {
+    return { ok: false as const, erro: "Um dos meses veio grande demais." };
+  }
+
+  await db.$transaction(
+    lidos.map(({ ano, mes, dados }) => {
+      const json = dados as Prisma.InputJsonValue;
+      return db.dadosExportados.upsert({
+        where: { projectId_ano_mes_tipo: { projectId, ano, mes, tipo: "direct" } },
+        create: { projectId, ano, mes, tipo: "direct", dados: json },
+        update: { dados: json },
+      });
+    }),
+  );
+
+  refreshAll();
+  return { ok: true as const, meses: lidos.length };
 }
 
 /* --------------------------------------------------------- conta do IG */

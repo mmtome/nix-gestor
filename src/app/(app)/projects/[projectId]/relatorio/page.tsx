@@ -3,8 +3,9 @@ import { FileBarChart } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assertProjectAccess } from "@/lib/permissions";
-import { nomeDoMes, numero, comSinal } from "@/lib/relatorio";
+import { nomeDoMes, numero, comSinal, MESES_CURTOS } from "@/lib/relatorio";
 import { NovoRelatorio, ContaInstagram } from "@/components/relatorio/Controles";
+import { ImportarDirect } from "@/components/relatorio/ImportarDirect";
 
 export default async function RelatorioListaPage({
   params,
@@ -21,7 +22,7 @@ export default async function RelatorioListaPage({
   );
   await assertProjectAccess(user, projectId, false);
 
-  const [relatorios, conta] = await Promise.all([
+  const [relatorios, conta, direct] = await Promise.all([
     db.relatorioMensal.findMany({
       where: { projectId },
       orderBy: [{ ano: "desc" }, { mes: "desc" }],
@@ -40,7 +41,25 @@ export default async function RelatorioListaPage({
       where: { projectId },
       select: { username: true, igUserId: true, accessToken: true, conectadoEm: true },
     }),
+    db.dadosExportados.findMany({
+      where: { projectId, tipo: "direct" },
+      orderBy: [{ ano: "asc" }, { mes: "asc" }],
+      select: { ano: true, mes: true, atualizadoEm: true },
+    }),
   ]);
+
+  const mesAno = (d: { ano: number; mes: number }) => `${MESES_CURTOS[d.mes - 1].toLowerCase()}/${d.ano}`;
+  const resumoDirect = direct.length
+    ? {
+        de: mesAno(direct[0]),
+        ate: mesAno(direct.at(-1)!),
+        meses: direct.length,
+        atualizado: new Date(Math.max(...direct.map((d) => d.atualizadoEm.getTime()))).toLocaleDateString(
+          "pt-BR",
+          { timeZone: "America/Sao_Paulo" },
+        ),
+      }
+    : null;
 
   const porAno = new Map<number, typeof relatorios>();
   for (const r of relatorios) {
@@ -77,6 +96,7 @@ export default async function RelatorioListaPage({
           }
           retorno={retorno}
         />
+        <ImportarDirect projectId={projectId} resumo={resumoDirect} />
       </div>
 
       {relatorios.length === 0 ? (

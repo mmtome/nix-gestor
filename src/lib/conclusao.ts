@@ -1,4 +1,5 @@
-import { nomeDoMes } from "./relatorio";
+import { duracao, nomeDoMes } from "./relatorio";
+import type { DirectMes } from "./direct";
 
 /* ============================================================================
    Rascunho da conclusão, escrito a partir dos números do mês.
@@ -52,6 +53,7 @@ function descrever(d: Destaque) {
 export function rascunhoDaConclusao(
   m: NumerosDoMes,
   anterior?: { mes: number; posts: number; visualizacoes: number; alcance: number } | null,
+  direct?: DirectMes | null,
 ): string {
   const frases: string[] = [];
   const mes = nomeDoMes(m.mes);
@@ -118,6 +120,17 @@ export function rascunhoDaConclusao(
         ? `O mesmo post liderou as interações, com ${resto}.`
         : `O post com mais interações foi ${descrever(topI)}, com ${resto}.`,
     );
+  }
+
+  if (direct && direct.recebidas) {
+    let f = `No Direct, chegaram ${n(direct.recebidas)} mensagens em ${n(direct.conversas)} conversas`;
+    if (direct.respostas.mediaMin != null) f += `, com tempo médio de resposta de ${duracao(direct.respostas.mediaMin)}`;
+    f += direct.semResposta
+      ? `; ${n(direct.semResposta)} ${direct.semResposta === 1 ? "conversa ficou" : "conversas ficaram"} sem resposta.`
+      : ".";
+    const tema = direct.assuntos.find((a) => a.rotulo !== "Outros");
+    if (tema) f += ` O assunto que mais apareceu foi ${tema.rotulo.toLowerCase()}.`;
+    frases.push(f);
   }
 
   return frases.join("\n");

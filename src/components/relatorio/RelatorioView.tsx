@@ -12,12 +12,20 @@ import {
   Pencil,
   Presentation,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
-import { salvarRelatorio, importarDaApi, importarMesesAnteriores } from "@/actions/relatorio";
+import {
+  salvarRelatorio,
+  importarDaApi,
+  importarMesesAnteriores,
+  excluirRelatorio,
+} from "@/actions/relatorio";
 import { montarComparativos, nomeDoMes } from "@/lib/relatorio";
 import type { ExtrasRelatorio, LinhaComparativa } from "@/lib/relatorio";
+import type { DirectDeck } from "@/lib/direct";
 import { Deck, type DadosDeck } from "./Deck";
 import { Editor, type EstadoRelatorio } from "./Editor";
+import { ImportarDirect } from "./ImportarDirect";
 
 /* ============================================================================
    A tela do relatório: alterna entre apresentar e editar.
@@ -40,6 +48,7 @@ export function RelatorioView({
   contaConectada,
   gerarAoAbrir = false,
   extrasIniciais,
+  direct,
 }: {
   id: string;
   projectId: string;
@@ -55,6 +64,8 @@ export function RelatorioView({
   gerarAoAbrir?: boolean;
   /** Comunidade, formatos e o resto que não é editado à mão. */
   extrasIniciais: ExtrasRelatorio;
+  /** Do arquivo exportado; vale para o projeto, não muda com a edição. */
+  direct: DirectDeck | null;
 }) {
   const router = useRouter();
   const [estado, setEstado] = useState<EstadoRelatorio>(inicial);
@@ -69,6 +80,8 @@ export function RelatorioView({
   const [buscandoMeses, setBuscandoMeses] = useState(false);
   /** Etapa do "Gerar relatório" em andamento, mostrada no lugar do aviso. */
   const [etapa, setEtapa] = useState<string | null>(null);
+  const [confirmarExclusao, setConfirmarExclusao] = useState(false);
+  const [excluindo, iniciarExclusao] = useTransition();
 
   const set = <K extends keyof EstadoRelatorio>(k: K, v: EstadoRelatorio[K]) => {
     setEstado((e) => ({ ...e, [k]: v }));
@@ -123,8 +136,9 @@ export function RelatorioView({
       fonte,
       comparativos: montarComparativos(linhas),
       extras,
+      direct,
     };
-  }, [estado, extras, outrosMeses, mes, ano, projeto, fonte]);
+  }, [estado, extras, outrosMeses, mes, ano, projeto, fonte, direct]);
 
   function salvar() {
     iniciarSalvar(async () => {
@@ -142,6 +156,20 @@ export function RelatorioView({
       } else {
         setAviso({ tom: "erro", texto: r.erro ?? "Não foi possível salvar." });
       }
+    });
+  }
+
+  /** Libera o mês: dá para gerar de novo do zero pela lista. O Direct fica. */
+  function excluir() {
+    iniciarExclusao(async () => {
+      const r = await excluirRelatorio(id);
+      if (!r.ok) {
+        setConfirmarExclusao(false);
+        setAviso({ tom: "erro", texto: r.erro ?? "Não foi possível excluir." });
+        return;
+      }
+      router.push(`/projects/${projectId}/relatorio`);
+      router.refresh();
     });
   }
 
@@ -297,6 +325,8 @@ export function RelatorioView({
             </button>
           )}
 
+          <ImportarDirect projectId={projectId} variante="botao" />
+
           <button
             onClick={() => setModo(modo === "editar" ? "apresentar" : "editar")}
             className="btn-ghost"
@@ -315,6 +345,28 @@ export function RelatorioView({
           <button onClick={() => window.print()} className="btn-ghost">
             <Download className="h-3.5 w-3.5" /> Baixar PDF
           </button>
+
+          {confirmarExclusao ? (
+            <>
+              <span className="text-[11.5px] text-warn">Excluir {nomeDoMes(mes).toLowerCase()} de {ano}?</span>
+              <button onClick={excluir} disabled={excluindo} className="btn-ghost text-warn">
+                {excluindo ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                Sim, excluir
+              </button>
+              <button onClick={() => setConfirmarExclusao(false)} disabled={excluindo} className="btn-ghost">
+                Cancelar
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setConfirmarExclusao(true)}
+              disabled={!!etapa}
+              className="btn-ghost"
+              title="Exclui este relatório para gerar o mês de novo. O Direct importado continua guardado."
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Excluir
+            </button>
+          )}
 
           <button onClick={salvar} disabled={!sujo || salvando} className="btn-primary">
             {salvando ? (
