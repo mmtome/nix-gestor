@@ -30,7 +30,7 @@ const CAMPOS_BASICOS = "id,created_time,from,to,message";
 
 /** Histórico lido até o fim. O número sobe quando a leitura passa a trazer
  *  campos novos: a conta com a marca antiga relê tudo uma vez. */
-const LIDO = "fim-4";
+const LIDO = "fim-5";
 
 type MsgApi = {
   id: string;
