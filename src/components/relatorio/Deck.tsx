@@ -373,7 +373,7 @@ const variacao = (atual: number, antes: number) => {
  */
 function slidesDirect(dd: DirectDeck, ano: number, mes: number, proximo: () => number) {
   const dm = dd.atual;
-  // Pela API não vêm ligações nem solicitações; o resto é igual ao arquivo.
+  // Pela API não vêm ligações, solicitações nem reações; o resto é igual ao arquivo.
   const pelaApi = dm.fonte === "api";
   const mesCurto = MESES_CURTOS[mes - 1].toLowerCase();
   const ate = dm.arquivoAte
@@ -630,8 +630,8 @@ function slidesDirect(dd: DirectDeck, ano: number, mes: number, proximo: () => n
           <div className="mt-[1.8em] grid grid-cols-4 gap-x-[1.8em] gap-y-[2.2em]">
             <Metrica
               rotulo="Reações"
-              valor={numero(it.reacoes)}
-              nota={it.reacoesConta ? `e ${numero(it.reacoesConta)} da conta` : undefined}
+              valor={pelaApi ? "—" : numero(it.reacoes)}
+              nota={pelaApi ? "a API da Meta não informa" : it.reacoesConta ? `e ${numero(it.reacoesConta)} da conta` : undefined}
             />
             <Metrica rotulo="Fotos e vídeos" valor={numero(it.midias)} />
             <Metrica rotulo="Áudios" valor={numero(it.audios)} />

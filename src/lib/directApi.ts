@@ -22,24 +22,45 @@ import type { ConversaBruta, Feicoes, MensagemBruta } from "./direct";
    corta o app inteiro quando ele passa do limite por hora.
    ========================================================================== */
 
-const CAMPOS = "id,created_time,from,to,message,attachments,reactions,shares,story,is_unsupported";
+// Sem "reactions": a Meta recusa o campo nas mensagens do Instagram
+// ("Unsupported request"). Recusa sem nome derruba os extras do fim para o
+// começo, por isso o menos importante vai por último.
+const CAMPOS = "id,created_time,from,to,message,attachments,story,shares,is_unsupported";
 const CAMPOS_BASICOS = "id,created_time,from,to,message";
 
 /** Histórico lido até o fim. O número sobe quando a leitura passa a trazer
  *  campos novos: a conta com a marca antiga relê tudo uma vez. */
-const LIDO = "fim-2";
+const LIDO = "fim-3";
 
 type MsgApi = {
   id: string;
   created_time: string;
   from?: { id?: string };
   message?: string;
-  attachments?: { data?: { mime_type?: string; image_data?: { render_as_sticker?: boolean } }[] };
+  attachments?: { data?: Anexo[] };
   reactions?: { data?: { reaction?: string; users?: { id?: string }[] }[] };
   shares?: { data?: { link?: string }[] };
   story?: { mention?: unknown; reply_to?: unknown };
   is_unsupported?: boolean;
 };
+type Anexo = {
+  mime_type?: string;
+  type?: string;
+  file_url?: string;
+  name?: string;
+  image_data?: { render_as_sticker?: boolean; animated_gif_url?: string };
+  video_data?: unknown;
+  audio_data?: unknown;
+};
+
+/** Foto, vídeo, áudio ou figurinha — pelo que o anexo trouxer de pista. */
+function tipoDoAnexo(a: Anexo): "midia" | "audio" | "figurinha" {
+  const pista = `${a.mime_type ?? ""} ${a.type ?? ""} ${a.name ?? ""} ${(a.file_url ?? "").split("?")[0]}`.toLowerCase();
+  if (a.image_data?.render_as_sticker || a.image_data?.animated_gif_url || /sticker|gif/.test(pista)) return "figurinha";
+  if (a.audio_data || /audio|\.(m4a|aac|mp3|ogg|opus|wav)\b/.test(pista)) return "audio";
+  return "midia";
+}
+
 type ConversaApi = { id: string; updated_time?: string; messages?: { data?: MsgApi[] } };
 type Pagina = { data?: ConversaApi[]; paging?: { next?: string; cursors?: { after?: string } } };
 
@@ -81,16 +102,14 @@ function paraLinha(projectId: string, ig: string, conversaId: string, m: MsgApi)
   const em = new Date(m.created_time);
   if (Number.isNaN(em.getTime())) return null;
   const daConta = m.from?.id === ig;
-  const anexos = m.attachments?.data ?? [];
-  const tipoDe = (a: (typeof anexos)[number]) => a.mime_type ?? "";
-  const figurinhas = anexos.filter((a) => a.image_data?.render_as_sticker || tipoDe(a) === "image/gif").length;
+  const anexos = (m.attachments?.data ?? []).map(tipoDoAnexo);
   const links = (m.shares?.data ?? []).map((s) => s.link ?? "");
   const respostaStory = !!m.story?.reply_to || links.some((l) => l.includes("/stories/"));
 
   const dados = {
-    midias: anexos.filter((a) => /^(image|video)\//.test(tipoDe(a))).length - figurinhas,
-    audios: anexos.filter((a) => tipoDe(a).startsWith("audio/")).length,
-    figurinhas,
+    midias: anexos.filter((a) => a === "midia").length,
+    audios: anexos.filter((a) => a === "audio").length,
+    figurinhas: anexos.filter((a) => a === "figurinha").length,
     compartilhamento: links.some((l) => !l.includes("/stories/")),
     respostaStory,
     reacoes: (m.reactions?.data ?? []).flatMap((r) =>
@@ -175,10 +194,17 @@ export async function coletarDirectDaConta(conta: Conta, orcamento = 10) {
 
   const linhas: Linha[] = [];
   let maisNova = conta.directAte;
+  // Só os nomes dos campos que vieram (nunca o conteúdo): mostra no resultado
+  // da coleta o que a Meta está entregando.
+  const formatos = new Map<string, number>();
+  const anotar = (k: string) => formatos.set(k, (formatos.get(k) ?? 0) + 1);
   const guardar = (c: ConversaApi) => {
     const t = c.updated_time ? new Date(c.updated_time) : null;
     if (t && (!maisNova || t > maisNova)) maisNova = t;
     for (const m of c.messages?.data ?? []) {
+      for (const k of Object.keys(m)) if (!["id", "created_time", "from", "to", "message"].includes(k)) anotar(k);
+      for (const a of m.attachments?.data ?? []) anotar(`anexo:${Object.keys(a).sort().join("+")}`);
+      if (m.story) anotar(`story:${Object.keys(m.story).join("+")}`);
       const l = paraLinha(projectId, cred.igUserId, c.id, m);
       if (l) linhas.push(l);
     }
@@ -261,6 +287,7 @@ export async function coletarDirectDaConta(conta: Conta, orcamento = 10) {
     meses: [...meses.values()],
     parou,
     ...(recusados.length ? { camposRecusados: recusados } : {}),
+    campos: Object.fromEntries(formatos),
   };
 }
 
