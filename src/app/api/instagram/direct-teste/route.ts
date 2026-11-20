@@ -13,9 +13,13 @@ type Resposta = { data?: { id: string; updated_time?: string }[]; paging?: { nex
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const projectId = url.searchParams.get("projeto") ?? "";
   const user = await getSession();
   if (!user) return NextResponse.json({ erro: "sem sessão" }, { status: 401 });
+  const pelaConta = await db.instagramAccount.findFirst({
+    where: { username: url.searchParams.get("conta") ?? "" },
+    select: { projectId: true },
+  });
+  const projectId = pelaConta?.projectId ?? url.searchParams.get("projeto") ?? "";
   try {
     await assertProjectAccess(user, projectId, false);
   } catch {
