@@ -211,7 +211,7 @@ export function QuadroSac({
               value={busca}
               onChange={(e) => digitarBusca(e.target.value)}
               placeholder="Buscar no título, legenda e respostas"
-              className="field w-[280px] py-1.5 pl-8 text-[12.5px]"
+              className="field w-[280px]! py-1.5! pl-8! text-[12.5px]!"
             />
           </div>
           {TIPOS.map((tipo) => {
@@ -222,7 +222,7 @@ export function QuadroSac({
                 key={tipo}
                 value={filtros[tipo]}
                 onChange={(e) => filtrar(tipo, e.target.value)}
-                className={`field w-auto py-1.5 text-[12.5px] ${filtros[tipo] ? "border-accent" : ""}`}
+                className={`field w-auto! py-1.5! text-[12.5px]! ${filtros[tipo] ? "border-accent!" : ""}`}
               >
                 <option value="">
                   {tipo === "canal" ? "Todos os canais" : tipo === "categoria" ? "Todas as categorias" : tipo === "evento" ? "Todos os eventos" : "Qualquer prioridade"}
@@ -239,7 +239,7 @@ export function QuadroSac({
           <select
             value={filtros.periodo}
             onChange={(e) => filtrar("periodo", e.target.value)}
-            className={`field w-auto py-1.5 text-[12.5px] ${filtros.periodo ? "border-accent" : ""}`}
+            className={`field w-auto! py-1.5! text-[12.5px]! ${filtros.periodo ? "border-accent!" : ""}`}
           >
             <option value="">Abertos + resolvidos em 7 dias</option>
             <option value="7">Recebidos em 7 dias</option>

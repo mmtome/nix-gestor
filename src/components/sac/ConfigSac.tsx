@@ -136,7 +136,7 @@ export function ConfigSac({
               value={regras.allowedSenders.join("\n")}
               onChange={(e) => setRegras({ ...regras, allowedSenders: e.target.value.split("\n") })}
               placeholder={"34 99999-0000"}
-              className="field text-[12.5px]"
+              className="field text-[12.5px]!"
             />
             {remetentes.length > 0 && (
               <div className="mt-2">
@@ -351,7 +351,7 @@ function ConexaoWhatsapp({ inicial }: { inicial: Conexao }) {
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://evolution-xxxx.up.railway.app"
-              className="field text-[12.5px]"
+              className="field text-[12.5px]!"
             />
           </label>
           <label className="block">
@@ -362,12 +362,12 @@ function ConexaoWhatsapp({ inicial }: { inicial: Conexao }) {
               onChange={(e) => setChave(e.target.value)}
               placeholder={inicial.temChave ? "salva — deixe vazio para manter" : "cole a chave"}
               autoComplete="off"
-              className="field text-[12.5px]"
+              className="field text-[12.5px]!"
             />
           </label>
           <label className="block">
             <span className="mb-1 block text-[11px] text-faint">Instância</span>
-            <input value={instancia} onChange={(e) => setInstancia(e.target.value)} className="field text-[12.5px]" />
+            <input value={instancia} onChange={(e) => setInstancia(e.target.value)} className="field text-[12.5px]!" />
           </label>
         </div>
       )}
@@ -493,7 +493,7 @@ function EscolherGrupo({
             value={manual}
             onChange={(e) => setManual(e.target.value)}
             placeholder="120363000000000000@g.us"
-            className="field max-w-sm py-1.5 text-[12.5px]"
+            className="field max-w-sm! py-1.5! text-[12.5px]!"
           />
           <button onClick={() => manual.trim() && onEscolher(manual.trim(), null)} className="btn-ghost py-1 text-[12px]">
             Usar
@@ -583,12 +583,12 @@ function LinhaTag({ tag }: { tag: TagSac }) {
     <div className={`flex flex-wrap items-center gap-2 px-3 py-2 text-[12.5px] ${active ? "" : "opacity-60"}`}>
       <input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="h-6 w-7 shrink-0 rounded bg-transparent" />
       <code className="w-[92px] shrink-0 truncate text-[12px] text-accent">#{tag.slug}</code>
-      <input value={label} onChange={(e) => setLabel(e.target.value)} className="field w-[150px] py-1 text-[12.5px]" />
+      <input value={label} onChange={(e) => setLabel(e.target.value)} className="field w-[150px]! py-1! text-[12.5px]!" />
       <input
         value={aliases}
         onChange={(e) => setAliases(e.target.value)}
         placeholder="outras formas, separadas por vírgula"
-        className="field min-w-[160px] flex-1 py-1 text-[12.5px]"
+        className="field min-w-[160px]! flex-1 py-1! text-[12.5px]!"
       />
       <label className="flex items-center gap-1 text-[11.5px] text-faint">
         <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="accent-[#8013a8]" />
@@ -649,14 +649,14 @@ function NovaTag({ tipo }: { tipo: TipoTag }) {
         value={slug}
         onChange={(e) => setSlug(e.target.value)}
         placeholder={tipo === "evento" ? "#lapa" : "#palavra"}
-        className="field w-[110px] py-1 text-[12.5px]"
+        className="field w-[110px]! py-1! text-[12.5px]!"
       />
-      <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Nome no card" className="field w-[150px] py-1 text-[12.5px]" />
+      <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Nome no card" className="field w-[150px]! py-1! text-[12.5px]!" />
       <input
         value={aliases}
         onChange={(e) => setAliases(e.target.value)}
         placeholder="outras formas, separadas por vírgula"
-        className="field min-w-[160px] flex-1 py-1 text-[12.5px]"
+        className="field min-w-[160px]! flex-1 py-1! text-[12.5px]!"
       />
       <button onClick={criar} disabled={pendente || !slug || !label} className="btn-primary px-2.5 py-1 text-[12px]">
         Criar
@@ -788,7 +788,7 @@ function Numero({ rotulo, valor, onChange }: { rotulo: string; valor: number; on
         min={0}
         value={valor}
         onChange={(e) => onChange(Number(e.target.value) || 0)}
-        className="field py-1.5 text-[12.5px]"
+        className="field py-1.5! text-[12.5px]!"
       />
     </label>
   );
@@ -805,7 +805,7 @@ function Emojis({ rotulo, valor, onChange }: { rotulo: string; valor: string[]; 
           setTexto(e.target.value);
           onChange(e.target.value.split(/\s+/).filter(Boolean));
         }}
-        className="field py-1.5 text-[15px]"
+        className="field py-1.5! text-[15px]!"
       />
     </label>
   );

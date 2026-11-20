@@ -129,7 +129,7 @@ export function DetalheSac({
                 const para = e.target.value as SacStatus;
                 mudar(() => moverCardSac({ cardId: card.id, para, ordem: orderTop(null) }));
               }}
-              className="field w-auto py-1 text-[12.5px]"
+              className="field w-auto! py-1! text-[12.5px]!"
             >
               {STATUS.map((s) => (
                 <option key={s} value={s}>
@@ -221,7 +221,7 @@ export function DetalheSac({
                     onChange={(e) =>
                       mudar(() => reclassificarCardSac({ cardId: card.id, [tipo]: e.target.value || null }))
                     }
-                    className="field py-1.5 text-[12.5px]"
+                    className="field py-1.5! text-[12.5px]!"
                   >
                     <option value="">—</option>
                     {tags
@@ -354,7 +354,7 @@ export function DetalheSac({
                 onChange={(e) => setNota(e.target.value)}
                 placeholder="Nota interna (fica só no gestor)"
                 rows={2}
-                className="field resize-y text-[12.5px]"
+                className="field resize-y text-[12.5px]!"
               />
               <div className="mt-1.5 flex justify-end">
                 <button type="submit" disabled={pendente || !nota.trim()} className="btn-ghost py-1 text-[12px]">
