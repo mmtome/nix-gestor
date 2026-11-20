@@ -30,7 +30,7 @@ const CAMPOS_BASICOS = "id,created_time,from,to,message";
 
 /** Histórico lido até o fim. O número sobe quando a leitura passa a trazer
  *  campos novos: a conta com a marca antiga relê tudo uma vez. */
-const LIDO = "fim-3";
+const LIDO = "fim-4";
 
 type MsgApi = {
   id: string;
@@ -53,8 +53,10 @@ type Anexo = {
   audio_data?: unknown;
 };
 
-/** Foto, vídeo, áudio ou figurinha — pelo que o anexo trouxer de pista. */
-function tipoDoAnexo(a: Anexo): "midia" | "audio" | "figurinha" {
+/** Foto, vídeo, áudio, figurinha ou post compartilhado — pelo que o anexo trouxer de pista. */
+function tipoDoAnexo(a: Anexo): "midia" | "audio" | "figurinha" | "compartilhamento" {
+  // generic_template é o cartão de um post ou reel enviado no Direct.
+  if ("generic_template" in a) return "compartilhamento";
   const pista = `${a.mime_type ?? ""} ${a.type ?? ""} ${a.name ?? ""} ${(a.file_url ?? "").split("?")[0]}`.toLowerCase();
   if (a.image_data?.render_as_sticker || a.image_data?.animated_gif_url || /sticker|gif/.test(pista)) return "figurinha";
   if (a.audio_data || /audio|\.(m4a|aac|mp3|ogg|opus|wav)\b/.test(pista)) return "audio";
@@ -110,7 +112,7 @@ function paraLinha(projectId: string, ig: string, conversaId: string, m: MsgApi)
     midias: anexos.filter((a) => a === "midia").length,
     audios: anexos.filter((a) => a === "audio").length,
     figurinhas: anexos.filter((a) => a === "figurinha").length,
-    compartilhamento: links.some((l) => !l.includes("/stories/")),
+    compartilhamento: links.some((l) => !l.includes("/stories/")) || anexos.includes("compartilhamento"),
     respostaStory,
     reacoes: (m.reactions?.data ?? []).flatMap((r) =>
       (r.users ?? []).map((u) => ({
@@ -261,7 +263,7 @@ export async function coletarDirectDaConta(conta: Conta, orcamento = 10) {
   for (let i = 0; i < regravar.length; i += 200) {
     await db.$transaction(
       regravar.slice(i, i + 200).map((l) =>
-        db.mensagemDirect.update({ where: { id: l.id }, data: { dados: l.dados } }),
+        db.mensagemDirect.update({ where: { id: l.id }, data: { dados: l.dados, tipo: l.tipo } }),
       ),
     );
   }
