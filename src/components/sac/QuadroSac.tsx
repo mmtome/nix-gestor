@@ -16,7 +16,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { BarChart3, Clock, Images, MessageSquare, Plus, Search, Settings, WifiOff, X } from "lucide-react";
+import { BarChart3, Clock, FileText, Images, MessageSquare, Plus, Search, Settings, WifiOff, X } from "lucide-react";
 import { compareOrder } from "@/lib/ordering";
 import { orderBetween, orderTop, type SacStatus } from "@/lib/sac/core";
 import {
@@ -189,6 +189,9 @@ export function QuadroSac({
               print vira comentário.
             </p>
           </div>
+          <Link href="/sac/relatorio" className="btn-ghost py-1.5 text-[12px]">
+            <FileText className="h-3.5 w-3.5" /> Relatório
+          </Link>
           <button
             onClick={() => setVerMetricas((v) => !v)}
             className={`btn-ghost py-1.5 text-[12px] ${verMetricas ? "border-accent text-text" : ""}`}

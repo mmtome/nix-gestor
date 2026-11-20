@@ -235,3 +235,31 @@ input[type="time"] {
     print-color-adjust: exact;
   }
 }
+
+/* ============================================================================
+   Relatório do SAC: folha clara em A4 retrato. A página nomeada evita herdar
+   o tamanho de slide que o deck declara no @page padrão.
+   ========================================================================== */
+.folha-sac {
+  page: sac;
+}
+@page sac {
+  size: A4 portrait;
+  margin: 12mm 12mm 14mm;
+}
+@media print {
+  .folha-sac {
+    max-width: none;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .folha-sac .evitar-quebra {
+    break-inside: avoid;
+  }
+  .folha-sac h2 {
+    break-after: avoid;
+  }
+}
