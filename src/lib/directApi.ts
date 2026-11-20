@@ -25,6 +25,10 @@ import type { ConversaBruta, Feicoes, MensagemBruta } from "./direct";
 const CAMPOS = "id,created_time,from,to,message,attachments,reactions,shares,story,is_unsupported";
 const CAMPOS_BASICOS = "id,created_time,from,to,message";
 
+/** Histórico lido até o fim. O número sobe quando a leitura passa a trazer
+ *  campos novos: a conta com a marca antiga relê tudo uma vez. */
+const LIDO = "fim-2";
+
 type MsgApi = {
   id: string;
   created_time: string;
@@ -125,29 +129,47 @@ type Conta = {
  */
 export async function coletarDirectDaConta(conta: Conta, orcamento = 10) {
   const cred = credencialDaConta(conta);
-  if (!cred) return { mensagens: 0, meses: [] as { ano: number; mes: number }[], erro: "sem conta conectada" };
+  if (!cred) {
+    return {
+      mensagens: 0,
+      chamadas: 0,
+      historico: "sem conta conectada",
+      meses: [] as { ano: number; mes: number }[],
+      parou: undefined as string | undefined,
+    };
+  }
   const { projectId } = conta;
 
-  let campos = CAMPOS;
+  // Campo que a Meta recusar sai sozinho — o erro diz qual é — e os outros
+  // continuam vindo. Recusa sem nome derruba os extras de um em um.
+  const campos = CAMPOS.split(",");
+  const basicos = CAMPOS_BASICOS.split(",");
+  const recusados: string[] = [];
   let tamanho = 50;
   let chamadas = 0;
   const pagina = async (after?: string): Promise<Pagina> => {
-    chamadas++;
-    const q =
-      `${cred.igUserId}/conversations?platform=instagram&limit=${tamanho}` +
-      `&fields=id,updated_time,messages.limit(20){${campos}}${after ? `&after=${encodeURIComponent(after)}` : ""}`;
-    try {
-      return await graph<Pagina>(q, cred.token);
-    } catch (e) {
-      if (e instanceof LimiteDaMeta) throw e;
-      const msg = e instanceof Error ? e.message : "";
-      // Campo que esta versão da API não aceita: segue com os básicos.
-      if (campos === CAMPOS && /^100:/.test(msg)) campos = CAMPOS_BASICOS;
-      // "Reduza a quantidade de dados": páginas menores.
-      else if (tamanho > 20 && /^(1|2):/.test(msg)) tamanho = 20;
-      else throw e;
+    for (;;) {
       chamadas++;
-      return graph<Pagina>(q.replace(CAMPOS, campos).replace(/limit=50/, `limit=${tamanho}`), cred.token);
+      const q =
+        `${cred.igUserId}/conversations?platform=instagram&limit=${tamanho}` +
+        `&fields=id,updated_time,messages.limit(20){${campos.join(",")}}` +
+        (after ? `&after=${encodeURIComponent(after)}` : "");
+      try {
+        return await graph<Pagina>(q, cred.token);
+      } catch (e) {
+        if (e instanceof LimiteDaMeta || chamadas >= orcamento + 8) throw e;
+        const msg = e instanceof Error ? e.message : "";
+        const extras = campos.filter((c) => !basicos.includes(c));
+        const nomeado = msg.match(/fields?\W+\(?([a-z_]+)/i)?.[1];
+        if (/^100:/.test(msg) && extras.length) {
+          const fora = nomeado && extras.includes(nomeado) ? nomeado : extras.at(-1)!;
+          campos.splice(campos.indexOf(fora), 1);
+          recusados.push(`${fora} (${msg.slice(0, 120)})`);
+        } else if (tamanho > 20 && /^(1|2):/.test(msg)) {
+          // "Reduza a quantidade de dados": páginas menores.
+          tamanho = 20;
+        } else throw e;
+      }
     }
   };
 
@@ -162,7 +184,11 @@ export async function coletarDirectDaConta(conta: Conta, orcamento = 10) {
     }
   };
 
-  let cursor = conta.directCursor;
+  // Leitura feita por uma versão anterior da coleta (menos campos): o
+  // histórico é relido e as mensagens já guardadas são completadas.
+  const relendo = conta.directCursor !== null && conta.directCursor.startsWith("fim") && conta.directCursor !== LIDO;
+  let cursor = relendo ? null : conta.directCursor;
+  const lidaAte = relendo ? null : conta.directAte;
   let parou: string | undefined;
   try {
     // 1. Novidades: do topo (mais recente) até a primeira conversa já lida.
@@ -170,7 +196,7 @@ export async function coletarDirectDaConta(conta: Conta, orcamento = 10) {
     for (let fim = false; !fim && chamadas < orcamento; ) {
       const p = await pagina(after);
       for (const c of p.data ?? []) {
-        if (conta.directAte && c.updated_time && new Date(c.updated_time) <= conta.directAte) {
+        if (lidaAte && c.updated_time && new Date(c.updated_time) <= lidaAte) {
           fim = true;
           break;
         }
@@ -179,7 +205,7 @@ export async function coletarDirectDaConta(conta: Conta, orcamento = 10) {
       const proximo = p.paging?.next ? p.paging.cursors?.after : undefined;
       // Primeira coleta: esta página abre também a leitura do histórico.
       if (cursor === null) {
-        cursor = proximo ?? "fim";
+        cursor = proximo ?? LIDO;
         fim = true;
       }
       if (!proximo) fim = true;
@@ -187,22 +213,31 @@ export async function coletarDirectDaConta(conta: Conta, orcamento = 10) {
     }
 
     // 2. Histórico, de onde parou na passagem anterior.
-    while (cursor && cursor !== "fim" && chamadas < orcamento) {
+    while (cursor && cursor !== LIDO && chamadas < orcamento) {
       const p = await pagina(cursor);
       for (const c of p.data ?? []) guardar(c);
-      cursor = (p.paging?.next ? p.paging.cursors?.after : undefined) ?? "fim";
+      cursor = (p.paging?.next ? p.paging.cursors?.after : undefined) ?? LIDO;
     }
   } catch (e) {
     if (!(e instanceof LimiteDaMeta)) throw e;
     parou = `limite da Meta (${e.message})`;
   }
 
-  // Mensagem já gravada não é regravada; reação nova numa antiga atualiza.
+  // Mensagem já gravada não é regravada, salvo na releitura ou quando chegou
+  // reação nova numa antiga.
   for (let i = 0; i < linhas.length; i += 1000) {
     await db.mensagemDirect.createMany({ data: linhas.slice(i, i + 1000), skipDuplicates: true });
   }
-  for (const l of linhas.filter((x) => (x.dados as { reacoes: unknown[] }).reacoes.length)) {
-    await db.mensagemDirect.update({ where: { id: l.id }, data: { dados: l.dados } });
+  const regravar =
+    conta.directCursor !== LIDO
+      ? linhas
+      : linhas.filter((x) => (x.dados as { reacoes: unknown[] }).reacoes.length);
+  for (let i = 0; i < regravar.length; i += 200) {
+    await db.$transaction(
+      regravar.slice(i, i + 200).map((l) =>
+        db.mensagemDirect.update({ where: { id: l.id }, data: { dados: l.dados } }),
+      ),
+    );
   }
 
   await db.instagramAccount.update({
@@ -222,9 +257,10 @@ export async function coletarDirectDaConta(conta: Conta, orcamento = 10) {
   return {
     mensagens: linhas.length,
     chamadas,
-    historico: cursor === "fim" ? "lido" : "em andamento",
+    historico: cursor === LIDO ? "lido" : "em andamento",
     meses: [...meses.values()],
     parou,
+    ...(recusados.length ? { camposRecusados: recusados } : {}),
   };
 }
 
